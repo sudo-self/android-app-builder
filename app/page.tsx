@@ -151,7 +151,10 @@ export default function APKBuilder() {
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Phone Frame */}
-        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84]">
+        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-[14px] border-black overflow-hidden">
+          {/* Outer green border that creates the rounded effect */}
+          <div className="absolute inset-0 rounded-[3rem] border-8 border-[#3DDC84] pointer-events-none" />
+          
           {/* Phone Notch */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-black rounded-b-3xl z-10" />
 
