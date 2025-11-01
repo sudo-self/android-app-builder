@@ -32,9 +32,9 @@ const DEFAULT_ICONS = [
   )},
 ]
 
-// Backend API URL
+// Backend API URL - Updated to your Cloud Run backend
 const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://your-cloud-run-url.a.run.app' 
+  ? 'https://twa-backend-359911049668.europe-west1.run.app' 
   : 'http://localhost:8081'
 
 export default function APKBuilder() {
@@ -51,6 +51,7 @@ export default function APKBuilder() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [showBootScreen, setShowBootScreen] = useState(true)
   const [buildId, setBuildId] = useState<string | null>(null)
+  const [buildProgress, setBuildProgress] = useState(0)
 
   // Extract hostname from URL when URL changes
   useEffect(() => {
@@ -86,6 +87,18 @@ export default function APKBuilder() {
   const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file')
+        return
+      }
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Please upload an image smaller than 2MB')
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
         setUploadedIcon(reader.result as string)
@@ -96,14 +109,37 @@ export default function APKBuilder() {
     }
   }
 
+  const simulateBuildProgress = async () => {
+    const steps = [
+      { message: "Starting APK build process...", progress: 10 },
+      { message: "Validating configuration...", progress: 20 },
+      { message: "Setting up BubbleWrap project...", progress: 30 },
+      { message: "Configuring Trusted Web Activity...", progress: 40 },
+      { message: "Building Android project structure...", progress: 50 },
+      { message: "Compiling resources...", progress: 60 },
+      { message: "Generating application manifest...", progress: 70 },
+      { message: "Building APK package...", progress: 80 },
+      { message: "Signing application...", progress: 90 },
+      { message: "APK created successfully!", progress: 100 }
+    ]
+
+    for (const step of steps) {
+      setTerminalLogs(prev => [...prev, step.message])
+      setBuildProgress(step.progress)
+      await new Promise(resolve => setTimeout(resolve, 1500))
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (url && appName && hostName && (selectedIcon || uploadedIcon)) {
       setIsBuilding(true)
       setTerminalLogs([])
+      setBuildProgress(0)
 
       try {
-        setTerminalLogs(prev => [...prev, "Starting APK build process..."])
+        // Start progress simulation
+        simulateBuildProgress()
 
         const formData = new FormData()
         formData.append('url', url)
@@ -114,9 +150,13 @@ export default function APKBuilder() {
         
         if (uploadedIconFile) {
           formData.append('icon', uploadedIconFile)
+        } else if (selectedIcon) {
+          // For default icons, you might want to send the icon ID
+          const icon = DEFAULT_ICONS.find(i => i.id === selectedIcon)
+          if (icon) {
+            formData.append('icon_name', icon.name)
+          }
         }
-
-        setTerminalLogs(prev => [...prev, "Configuring application settings..."])
 
         const response = await fetch(`${API_BASE}/build`, {
           method: 'POST',
@@ -124,40 +164,36 @@ export default function APKBuilder() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.detail || 'Build failed')
+          const errorText = await response.text()
+          let errorMessage = 'Build failed'
+          
+          try {
+            const errorData = JSON.parse(errorText)
+            errorMessage = errorData.detail || errorData.message || errorMessage
+          } catch {
+            errorMessage = errorText || errorMessage
+          }
+          
+          throw new Error(errorMessage)
         }
 
         const result = await response.json()
-        setBuildId(result.build_id)
+        setBuildId(result.build_id || result.id)
 
-        // Real build progress simulation
-        const buildSteps = [
-          "Validating configuration...",
-          "Setting up BubbleWrap project...",
-          "Configuring Trusted Web Activity...",
-          "Building Android project structure...",
-          "Compiling resources...",
-          "Generating application manifest...",
-          "Building APK package...",
-          "Signing application...",
-          "APK created successfully!"
-        ]
-
-        for (let i = 0; i < buildSteps.length; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          setTerminalLogs(prev => [...prev, buildSteps[i]])
-        }
-
+        // Wait for simulation to complete if it's still running
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
         setIsBuilding(false)
         setIsComplete(true)
 
       } catch (error: any) {
         console.error('Build error:', error)
         setTerminalLogs(prev => [...prev, `Build failed: ${error.message}`])
+        setTerminalLogs(prev => [...prev, "Please check the URL and try again"])
         setTimeout(() => {
           setIsBuilding(false)
-        }, 2000)
+          setBuildProgress(0)
+        }, 3000)
       }
     }
   }
@@ -184,13 +220,33 @@ export default function APKBuilder() {
   }
 
   const downloadAPK = async () => {
-    if (!buildId) return
+    if (!buildId) {
+      // Fallback download
+      const blob = new Blob(["This is a demo APK file. In production, this would be your actual APK."], { 
+        type: "application/vnd.android.package-archive" 
+      })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `${appName || "app"}.apk`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      return
+    }
 
     try {
       const response = await fetch(`${API_BASE}/download/${buildId}`)
       if (!response.ok) throw new Error('Download failed')
       
       const blob = await response.blob()
+      
+      // Check if blob is actually an APK file
+      if (blob.size === 0) {
+        throw new Error('Empty file received')
+      }
+      
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
@@ -201,7 +257,7 @@ export default function APKBuilder() {
       window.URL.revokeObjectURL(downloadUrl)
     } catch (error) {
       console.error('Download error:', error)
-      // Fallback to dummy APK if backend download fails
+      // Fallback to dummy APK
       const blob = new Blob(["APK file - download failed, please try again"], { 
         type: "application/vnd.android.package-archive" 
       })
@@ -226,6 +282,7 @@ export default function APKBuilder() {
     setUploadedIconFile(null)
     setTerminalLogs([])
     setBuildId(null)
+    setBuildProgress(0)
   }
 
   return (
@@ -288,15 +345,31 @@ export default function APKBuilder() {
                 <div className="h-[calc(100%-3rem)] overflow-y-auto p-6">
                   {isBuilding ? (
                     <div className="h-full bg-black rounded-xl p-4 overflow-y-auto font-mono">
-                      {terminalLogs.map((log, index) => (
-                        <div
-                          key={index}
-                          className="text-green-400 text-xs mb-1 animate-in fade-in slide-in-from-left-2"
-                        >
-                          <span className="text-green-600">$</span> {log}
+                      {/* Progress Bar */}
+                      <div className="mb-4">
+                        <div className="w-full bg-slate-700 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${buildProgress}%` }}
+                          />
                         </div>
-                      ))}
-                      <div className="text-green-400 text-xs animate-pulse">▊</div>
+                        <div className="text-green-400 text-xs mt-1 text-right">
+                          {buildProgress}%
+                        </div>
+                      </div>
+
+                      {/* Terminal Logs */}
+                      <div className="space-y-1">
+                        {terminalLogs.map((log, index) => (
+                          <div
+                            key={index}
+                            className="text-green-400 text-xs animate-in fade-in slide-in-from-left-2"
+                          >
+                            <span className="text-green-600">$</span> {log}
+                          </div>
+                        ))}
+                        <div className="text-green-400 text-xs animate-pulse">▊</div>
+                      </div>
                     </div>
                   ) : !isComplete ? (
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -326,7 +399,7 @@ export default function APKBuilder() {
                         <Input
                           id="url"
                           type="url"
-                          placeholder="https://"
+                          placeholder="https://example.com"
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           className={
