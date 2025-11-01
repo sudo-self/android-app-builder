@@ -100,11 +100,11 @@ export default function APKBuilder() {
     if (!isBuilding || !githubRunId) return
 
     let pollCount = 0
-    const maxPolls = 60
+    const maxPolls = 120 // 10 minutes max (5s intervals)
 
     const pollBuildStatus = async () => {
       if (pollCount >= maxPolls) {
-        setTerminalLogs(prev => [...prev, "Build timeout - check GitHub Actions for status"])
+        setTerminalLogs(prev => [...prev, "⏰ Build timeout - check GitHub Actions for status"])
         setIsBuilding(false)
         return
       }
@@ -115,7 +115,7 @@ export default function APKBuilder() {
         const result = await checkBuildStatus(githubRunId)
         
         if (result.status === 'success') {
-          setTerminalLogs(prev => [...prev, "✅ Build completed successfully!", "APK is ready for download."])
+          setTerminalLogs(prev => [...prev, "✅ Build completed successfully!", "📱 APK is ready for download!"])
           setIsBuilding(false)
           setIsComplete(true)
           
@@ -125,11 +125,17 @@ export default function APKBuilder() {
         } else if (result.status === 'failed') {
           setTerminalLogs(prev => [...prev, "❌ Build failed. Check GitHub Actions for details."])
           setIsBuilding(false)
-        } else if (result.status === 'pending') {
+        } else {
+          // Still building - add progress indicator
+          const elapsedMinutes = Math.floor((Date.now() - buildStartTime) / 60000)
+          if (pollCount % 6 === 0) { // Every 30 seconds
+            setTerminalLogs(prev => [...prev, `⏳ Still building... (${elapsedMinutes}m elapsed)`])
+          }
           setTimeout(pollBuildStatus, 5000)
         }
       } catch (error) {
         console.error('Error polling GitHub status:', error)
+        // Continue polling on error
         setTimeout(pollBuildStatus, 5000)
       }
     }
@@ -139,7 +145,7 @@ export default function APKBuilder() {
     return () => {
       pollCount = maxPolls
     }
-  }, [isBuilding, githubRunId])
+  }, [isBuilding, githubRunId, buildStartTime])
 
   const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
     const token = getGitHubToken()
@@ -166,31 +172,6 @@ export default function APKBuilder() {
       
       if (runData.status === 'completed') {
         if (runData.conclusion === 'success') {
-          try {
-            const artifactsResponse = await fetch(
-              `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
-              {
-                headers: {
-                  'Authorization': `token ${token}`,
-                  'Accept': 'application/vnd.github.v3+json'
-                }
-              }
-            )
-            
-            if (artifactsResponse.ok) {
-              const artifactsData = await artifactsResponse.json()
-              if (artifactsData.artifacts && artifactsData.artifacts.length > 0) {
-                const artifact = artifactsData.artifacts[0]
-                return { 
-                  status: 'success', 
-                  artifactUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`
-                }
-              }
-            }
-          } catch (artifactError) {
-            console.warn('Could not fetch artifacts:', artifactError)
-          }
-          
           return { status: 'success' }
         } else {
           return { status: 'failed' }
@@ -247,10 +228,12 @@ export default function APKBuilder() {
         }
       }
 
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Wait for workflow to start
+      await new Promise(resolve => setTimeout(resolve, 5000))
 
+      // Find the workflow run
       const runsResponse = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=5`,
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=10`,
         {
           headers: {
             'Authorization': `token ${token}`,
@@ -262,14 +245,7 @@ export default function APKBuilder() {
       if (runsResponse.ok) {
         const runsData = await runsResponse.json()
         if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-          const matchingRun = runsData.workflow_runs.find((run: any) => 
-            run.head_commit?.message?.includes(buildData.buildId)
-          )
-          
-          if (matchingRun) {
-            return matchingRun.id.toString()
-          }
-          
+          // Get the most recent run
           const recentRun = runsData.workflow_runs[0]
           return recentRun.id.toString()
         }
@@ -326,21 +302,28 @@ export default function APKBuilder() {
           backgroundColor: backgroundColor
         }
         
-        setTerminalLogs(prev => [
-          ...prev, 
-          `Build Configuration:`,
-          `  URL: ${url}`,
-          `  Hostname: ${cleanHostName}`,
-          `  App Name: ${appName}`,
-          `  Build ID: ${buildId}`,
-          "Starting build process..."
+        setTerminalLogs([
+          "🚀 Starting APK build process...",
+          `📱 App: ${appName}`,
+          `🌐 Domain: ${cleanHostName}`,
+          `🎨 Theme: ${themeColor}`,
+          `🆔 Build ID: ${buildId}`,
+          "⏳ Triggering GitHub Actions workflow...",
+          ""
         ])
 
         const runId = await triggerGitHubAction(buildData)
         
         if (runId) {
           setGithubRunId(runId)
-          setTerminalLogs(prev => [...prev, `GitHub Actions run #${runId} started`, "Monitoring build progress..."])
+          setTerminalLogs(prev => [
+            ...prev,
+            `✅ GitHub Actions triggered successfully!`,
+            `🔗 Run ID: ${runId}`,
+            "📡 Monitoring build progress...",
+            "⏰ This may take 2-5 minutes...",
+            ""
+          ])
         } else {
           throw new Error('Failed to get GitHub Actions run ID. The build may have started - check GitHub Actions.')
         }
@@ -364,9 +347,7 @@ export default function APKBuilder() {
   }
 
   const downloadAPK = async () => {
-    if (artifactUrl) {
-      window.open(artifactUrl, '_blank')
-    } else if (githubRunId) {
+    if (githubRunId) {
       window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
     }
   }
@@ -392,6 +373,7 @@ export default function APKBuilder() {
 
   const resetForm = () => {
     setIsComplete(false)
+    setIsBuilding(false)
     setUrl("")
     setAppName("")
     setHostName("")
@@ -477,13 +459,13 @@ export default function APKBuilder() {
                 </div>
 
                 <div className="h-[calc(100%-3rem-24px)] overflow-y-auto p-6">
-                  {isBuilding ? (
+                  {isBuilding || isComplete ? (
                     <div className="h-full bg-black rounded-xl p-4 overflow-y-auto font-mono">
                       <div className="flex items-center gap-2 mb-4 text-green-400 text-sm">
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">apk.jessejesse.com</span>
+                        <span className="ml-2">apk-builder</span>
                       </div>
 
                       <div className="space-y-2">
@@ -493,15 +475,17 @@ export default function APKBuilder() {
                           </div>
                         ))}
                         
-                        <div className="flex items-center gap-2 text-green-400 text-sm">
-                          <span className="text-green-600">$</span>
-                          <div className="flex gap-1">
-                            <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                            <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        {isBuilding && (
+                          <div className="flex items-center gap-2 text-green-400 text-sm">
+                            <span className="text-green-600">$</span>
+                            <div className="flex gap-1">
+                              <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                              <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                            </div>
+                            <span>Building APK...</span>
                           </div>
-                          <span>Building APK...</span>
-                        </div>
+                        )}
 
                         {githubRunId && (
                           <div className="text-gray-400 text-xs mt-4 pt-2 border-t border-slate-700">
@@ -511,13 +495,13 @@ export default function APKBuilder() {
                               rel="noopener noreferrer"
                               className="underline hover:no-underline hover:text-pink-500"
                             >
-                              view build on GitHub
+                              view live build on GitHub
                             </a>
                           </div>
                         )}
                       </div>
                     </div>
-                  ) : !isComplete ? (
+                  ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="text-center mb-6">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mb-3 shadow-lg">
@@ -689,7 +673,7 @@ export default function APKBuilder() {
                       )}
 
                       <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                        builds may take 2-3 minutes
+                        builds may take 2-5 minutes
                       </p>
 
                       <Button
@@ -701,110 +685,6 @@ export default function APKBuilder() {
                         Build App
                       </Button>
                     </form>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full animate-in fade-in zoom-in duration-500">
-                      <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4 animate-in zoom-in duration-300">
-                          <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <h2 className={`text-xl font-bold mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          Build Complete
-                        </h2>
-                        <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Your Android App is ready for download
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col items-center gap-3 mb-8">
-                        <div className={`w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border-2 ${
-                          isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
-                        }`}>
-                          <div 
-                            className="w-12 h-12 rounded-xl flex items-center justify-center"
-                            style={{ background: `linear-gradient(to bottom right, ${themeColor}, ${themeColorDark})` }}
-                          >
-                            <span className="text-white font-bold text-lg">{appName.charAt(0)}</span>
-                          </div>
-                        </div>
-                        <p className={`text-sm font-semibold max-w-[80px] text-center leading-tight ${
-                          isDarkMode ? "text-white" : "text-slate-900"
-                        }`}>
-                          {appName}
-                        </p>
-                      </div>
-
-                      <Button
-                        onClick={downloadAPK}
-                        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-6 rounded-xl text-base font-semibold shadow-lg mb-4 transition-all hover:shadow-xl"
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        Download APK
-                      </Button>
-
-                      {githubRunId && (
-                        <>
-                          <Button
-                            onClick={() => setShowAppKey(!showAppKey)}
-                            variant="outline"
-                            className={`w-full mb-4 transition-all ${
-                              isDarkMode
-                                ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
-                                : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
-                            }`}
-                          >
-                            <Key className="w-5 h-5 mr-2" />
-                            {showAppKey ? "Hide App Key" : "View App Key"}
-                          </Button>
-
-                          {showAppKey && (
-                            <div className={`w-full p-4 rounded-lg mb-4 border ${
-                              isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-300"
-                            }`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <h3 className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                  App Signing Key
-                                </h3>
-                                <Button
-                                  onClick={copyAppKey}
-                                  size="sm"
-                                  variant="ghost"
-                                  className={`h-8 px-2 ${
-                                    isDarkMode 
-                                      ? "text-slate-300 hover:bg-slate-700" 
-                                      : "text-slate-600 hover:bg-slate-200"
-                                  }`}
-                                >
-                                  <Copy className="w-4 h-4 mr-1" />
-                                  {copied ? "Copied" : "Copy"}
-                                </Button>
-                              </div>
-                              <div className={`font-mono text-sm space-y-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
-                                <div>Alias: <span className="font-bold">android</span></div>
-                                <div>Password: <span className="font-bold">123321</span></div>
-                              </div>
-                              <p className={`text-xs mt-3 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                                You will need this key to publish changes to your app.
-                              </p>
-                            </div>
-                          )}
-                        </>
-                      )}
-
-                      <Button
-                        onClick={resetForm}
-                        variant="outline"
-                        className={`w-full transition-all ${
-                          isDarkMode
-                            ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
-                            : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
-                        }`}
-                      >
-                        <RefreshCw className="w-5 h-5 mr-2" />
-                        Build Another App
-                      </Button>
-                    </div>
                   )}
                 </div>
 
