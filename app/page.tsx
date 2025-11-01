@@ -1,15 +1,29 @@
 "use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle } from "lucide-react"
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
-const GITHUB_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN
+
+interface BuildData {
+  buildId: string
+  hostName: string
+  launchUrl: string
+  name: string
+  launcherName: string
+  themeColor: string
+  themeColorDark: string
+  backgroundColor: string
+}
+
+interface BuildStatus {
+  status: 'pending' | 'success' | 'failed' | 'unknown'
+  artifactUrl?: string
+}
 
 export default function APKBuilder() {
   const [url, setUrl] = useState("")
@@ -31,6 +45,19 @@ export default function APKBuilder() {
   const [showAppKey, setShowAppKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Get GitHub token from environment
+  const getGitHubToken = (): string | null => {
+    if (typeof window === 'undefined') return null
+    
+    const token = 
+      process.env.NEXT_PUBLIC_GITHUB_TOKEN ||
+      (window as any).ENV?.NEXT_PUBLIC_GITHUB_TOKEN ||
+      localStorage.getItem('github_token')
+    
+    return token || null
+  }
 
   useEffect(() => {
     if (url) {
@@ -42,12 +69,16 @@ export default function APKBuilder() {
           const defaultName = extractedHost.replace(/^www\./, '').split('.')[0]
           setAppName(defaultName.charAt(0).toUpperCase() + defaultName.slice(1))
         }
+        setError(null)
       } catch (e) {
-        // Invalid URL, clear hostname if URL is invalid
         setHostName("")
+        if (url) {
+          setError("Please enter a valid URL with http:// or https://")
+        }
       }
     } else {
       setHostName("")
+      setError(null)
     }
   }, [url, appName])
 
@@ -68,36 +99,52 @@ export default function APKBuilder() {
   useEffect(() => {
     if (!isBuilding || !githubRunId) return
 
-    const pollInterval = setInterval(async () => {
+    let pollCount = 0
+    const maxPolls = 60
+
+    const pollBuildStatus = async () => {
+      if (pollCount >= maxPolls) {
+        setTerminalLogs(prev => [...prev, "Build timeout - check GitHub Actions for status"])
+        setIsBuilding(false)
+        return
+      }
+
+      pollCount++
+
       try {
         const result = await checkBuildStatus(githubRunId)
         
         if (result.status === 'success') {
-          clearInterval(pollInterval)
+          setTerminalLogs(prev => [...prev, "✅ Build completed successfully!", "APK is ready for download."])
           setIsBuilding(false)
           setIsComplete(true)
-          setTerminalLogs(prev => [...prev, "Build completed. APK is ready for download."])
           
           if (result.artifactUrl) {
             setArtifactUrl(result.artifactUrl)
           }
         } else if (result.status === 'failed') {
-          clearInterval(pollInterval)
+          setTerminalLogs(prev => [...prev, "❌ Build failed. Check GitHub Actions for details."])
           setIsBuilding(false)
-          setTerminalLogs(prev => [...prev, "Build failed. Check GitHub Actions for details."])
+        } else if (result.status === 'pending') {
+          setTimeout(pollBuildStatus, 5000)
         }
       } catch (error) {
         console.error('Error polling GitHub status:', error)
+        setTimeout(pollBuildStatus, 5000)
       }
-    }, 5000)
+    }
 
-    return () => clearInterval(pollInterval)
+    pollBuildStatus()
+
+    return () => {
+      pollCount = maxPolls
+    }
   }, [isBuilding, githubRunId])
 
-  const checkBuildStatus = async (runId: string): Promise<{ status: string; artifactUrl?: string }> => {
-    if (!GITHUB_TOKEN) {
-      console.error('GitHub token not configured')
-      return { status: 'unknown' }
+  const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
+    const token = getGitHubToken()
+    if (!token) {
+      throw new Error('GitHub token not configured')
     }
     
     try {
@@ -105,72 +152,72 @@ export default function APKBuilder() {
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`,
         {
           headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
       )
       
       if (!runResponse.ok) {
-        console.error('Failed to check build status:', runResponse.status)
-        return { status: 'unknown' }
+        throw new Error(`GitHub API error: ${runResponse.status}`)
       }
       
       const runData = await runResponse.json()
       
       if (runData.status === 'completed') {
         if (runData.conclusion === 'success') {
-          const artifactsResponse = await fetch(
-            `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
-            {
-              headers: {
-                'Authorization': `token ${GITHUB_TOKEN}`,
-                'Accept': 'application/vnd.github.v3+json'
+          try {
+            const artifactsResponse = await fetch(
+              `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
+              {
+                headers: {
+                  'Authorization': `token ${token}`,
+                  'Accept': 'application/vnd.github.v3+json'
+                }
+              }
+            )
+            
+            if (artifactsResponse.ok) {
+              const artifactsData = await artifactsResponse.json()
+              if (artifactsData.artifacts && artifactsData.artifacts.length > 0) {
+                const artifact = artifactsData.artifacts[0]
+                return { 
+                  status: 'success', 
+                  artifactUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`
+                }
               }
             }
-          )
-          
-          if (artifactsResponse.ok) {
-            const artifactsData = await artifactsResponse.json()
-            if (artifactsData.artifacts && artifactsData.artifacts.length > 0) {
-              const artifact = artifactsData.artifacts[0]
-              return { 
-                status: 'success', 
-                artifactUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts/${artifact.id}`
-              }
-            }
+          } catch (artifactError) {
+            console.warn('Could not fetch artifacts:', artifactError)
           }
+          
           return { status: 'success' }
         } else {
           return { status: 'failed' }
         }
       }
       
-      return { status: runData.status }
+      return { status: 'pending' }
     } catch (error) {
       console.error('Error checking build status:', error)
-      return { status: 'unknown' }
+      throw error
     }
   }
 
   const validateWebsite = async (url: string): Promise<boolean> => {
     try {
       const urlObj = new URL(url)
-      if (!urlObj.hostname || !urlObj.protocol.startsWith('http')) {
-        return false
-      }
-      return true
+      return !!(urlObj.hostname && urlObj.protocol.startsWith('http') && urlObj.hostname.includes('.'))
     } catch (e) {
       return false
     }
   }
 
-  const triggerGitHubAction = async (buildData: any) => {
-    if (!GITHUB_TOKEN) {
-      throw new Error('GitHub token not configured. Please set NEXT_PUBLIC_GITHUB_TOKEN.')
+  const triggerGitHubAction = async (buildData: BuildData): Promise<string | null> => {
+    const token = getGitHubToken()
+    if (!token) {
+      throw new Error('GitHub token not configured. Please check your environment variables.')
     }
-
-    console.log('Triggering GitHub Action with data:', buildData)
 
     try {
       const response = await fetch(
@@ -178,7 +225,7 @@ export default function APKBuilder() {
         {
           method: 'POST',
           headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
@@ -191,24 +238,22 @@ export default function APKBuilder() {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('GitHub API Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText,
-          headers: Object.fromEntries(response.headers.entries())
-        })
-        throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`)
+        if (response.status === 404) {
+          throw new Error('GitHub repository not found or access denied')
+        } else if (response.status === 403) {
+          throw new Error('GitHub token invalid or missing permissions')
+        } else {
+          throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`)
+        }
       }
 
-      console.log('GitHub Action triggered successfully')
-
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 3000))
 
       const runsResponse = await fetch(
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=5`,
         {
           headers: {
-            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
@@ -216,16 +261,20 @@ export default function APKBuilder() {
 
       if (runsResponse.ok) {
         const runsData = await runsResponse.json()
-        console.log('Found workflow runs:', runsData.workflow_runs?.length)
-        
         if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+          const matchingRun = runsData.workflow_runs.find((run: any) => 
+            run.head_commit?.message?.includes(buildData.buildId)
+          )
+          
+          if (matchingRun) {
+            return matchingRun.id.toString()
+          }
+          
           const recentRun = runsData.workflow_runs[0]
-          console.log('Most recent run:', recentRun.id, recentRun.status)
-          return recentRun.id
+          return recentRun.id.toString()
         }
       }
 
-      console.warn('No workflow runs found')
       return null
 
     } catch (error) {
@@ -237,24 +286,20 @@ export default function APKBuilder() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('=== FORM SUBMIT DEBUG ===')
-    console.log('Form values at submit:')
-    console.log('  url:', url)
-    console.log('  appName:', appName)
-    console.log('  hostName:', hostName)
-    console.log('  themeColor:', themeColor)
-    console.log('  themeColorDark:', themeColorDark)
-    console.log('  backgroundColor:', backgroundColor)
-    console.log('========================')
+    if (!getGitHubToken()) {
+      setError('GitHub token not configured. Please check your environment setup.')
+      return
+    }
     
     if (url && appName && hostName) {
       const isValidWebsite = await validateWebsite(url)
       if (!isValidWebsite) {
-        setTerminalLogs(["Invalid website URL format. Please include http:// or https://"])
+        setError("Invalid website URL format. Please include http:// or https:// and a valid domain.")
         return
       }
 
       setIsBuilding(true)
+      setError(null)
       setTerminalLogs([])
       setGithubRunId(null)
       setArtifactUrl(null)
@@ -262,19 +307,15 @@ export default function APKBuilder() {
       setShowAppKey(false)
 
       try {
-        console.log('Starting build process...')
-        console.log('Environment check - GitHub Token:', GITHUB_TOKEN ? 'Set' : 'Not set')
-
         const buildId = `build_${Date.now()}`
         setBuildId(buildId)
 
-        // Clean the hostname - remove protocol, www, and trailing slashes
         const cleanHostName = url
-          .replace(/^https?:\/\//, '')  // Remove http:// or https://
-          .replace(/^www\./, '')         // Remove www.
-          .replace(/\/$/, '')            // Remove trailing slash
+          .replace(/^https?:\/\//, '')
+          .replace(/^www\./, '')
+          .replace(/\/$/, '')
         
-        const buildData = {
+        const buildData: BuildData = {
           buildId,
           hostName: cleanHostName,
           launchUrl: '/',
@@ -285,13 +326,6 @@ export default function APKBuilder() {
           backgroundColor: backgroundColor
         }
         
-        console.log('=== BUILD DATA DEBUG ===')
-        console.log('URL input:', url)
-        console.log('Cleaned hostname:', cleanHostName)
-        console.log('App name:', appName)
-        console.log('Full build data:', JSON.stringify(buildData, null, 2))
-        console.log('=======================')
-        
         setTerminalLogs(prev => [
           ...prev, 
           `Build Configuration:`,
@@ -299,37 +333,24 @@ export default function APKBuilder() {
           `  Hostname: ${cleanHostName}`,
           `  App Name: ${appName}`,
           `  Build ID: ${buildId}`,
-          `Starting build process...`
+          "Starting build process..."
         ])
 
-        setTerminalLogs(prev => [...prev, "Starting build process..."])
-        
         const runId = await triggerGitHubAction(buildData)
         
         if (runId) {
-          console.log('GitHub Run ID received:', runId)
-          setGithubRunId(runId.toString())
+          setGithubRunId(runId)
           setTerminalLogs(prev => [...prev, `GitHub Actions run #${runId} started`, "Monitoring build progress..."])
         } else {
-          throw new Error('Failed to get GitHub Actions run ID')
+          throw new Error('Failed to get GitHub Actions run ID. The build may have started - check GitHub Actions.')
         }
 
       } catch (error: any) {
         console.error('Build error:', error)
-        let errorMessage = error.message
-        
-        if (errorMessage.includes('GitHub API error: 404')) {
-          errorMessage = 'GitHub repository not found or access denied'
-        } else if (errorMessage.includes('GitHub API error: 403')) {
-          errorMessage = 'GitHub token invalid or missing permissions'
-        } else if (errorMessage.includes('GitHub token not configured')) {
-          errorMessage = 'GitHub token not configured. Check your environment variables.'
-        }
-        
-        setTerminalLogs(prev => [...prev, `Build failed: ${errorMessage}`, "Please check the console for details"])
-        setTimeout(() => {
-          setIsBuilding(false)
-        }, 3000)
+        const errorMessage = error.message || 'Unknown error occurred'
+        setTerminalLogs(prev => [...prev, `❌ Build failed: ${errorMessage}`])
+        setError(errorMessage)
+        setIsBuilding(false)
       }
     }
   }
@@ -385,19 +406,39 @@ export default function APKBuilder() {
     setShowAppKey(false)
     setCopied(false)
     setShowAdvanced(false)
+    setError(null)
   }
+
+  const hasGitHubToken = !!getGitHubToken()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84] overflow-hidden">
+          {/* Error displays */}
+          {error && !isBuilding && (
+            <div className="absolute top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">{error}</span>
+              </div>
+            </div>
+          )}
+          
+          {!hasGitHubToken && (
+            <div className="absolute top-4 left-4 right-4 bg-yellow-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">GitHub token not configured</span>
+              </div>
+            </div>
+          )}
+
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-black rounded-b-3xl z-10" />
 
-          <div
-            className={`absolute inset-[6px] rounded-[2.5rem] overflow-hidden transition-colors ${
-              isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
-            }`}
-          >     
+          <div className={`absolute inset-[6px] rounded-[2.5rem] overflow-hidden transition-colors ${
+            isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
+          }`}>     
             {showBootScreen ? (
               <div className="h-full bg-black flex flex-col items-center justify-center rounded-[2.5rem]">
                 <div className="animate-in fade-in zoom-in duration-1000">
@@ -414,11 +455,9 @@ export default function APKBuilder() {
               </div>
             ) : (
               <>
-                <div
-                  className={`h-12 flex items-center justify-between px-8 text-xs rounded-t-[2.5rem] ${
-                    isDarkMode ? "bg-slate-950 text-white" : "bg-slate-900 text-white"
-                  }`}
-                >
+                <div className={`h-12 flex items-center justify-between px-8 text-xs rounded-t-[2.5rem] ${
+                  isDarkMode ? "bg-slate-950 text-white" : "bg-slate-900 text-white"
+                }`}>
                   <div className="flex items-center gap-3 text-[#3DDC84]">
                     <span className="font-semibold">{formatTime(currentTime)}</span>
                     <span className="opacity-80">{formatDate(currentTime)}</span>
@@ -449,10 +488,7 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         {terminalLogs.map((log, index) => (
-                          <div
-                            key={index}
-                            className="text-green-400 text-sm animate-in fade-in slide-in-from-left-2"
-                          >
+                          <div key={index} className="text-green-400 text-sm animate-in fade-in slide-in-from-left-2">
                             <span className="text-green-600 mr-2">$</span> {log}
                           </div>
                         ))}
@@ -496,12 +532,9 @@ export default function APKBuilder() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="url"
-                          className={`font-medium flex items-center gap-2 ${
-                            isDarkMode ? "text-white" : "text-slate-900"
-                          }`}
-                        >
+                        <Label htmlFor="url" className={`font-medium flex items-center gap-2 ${
+                          isDarkMode ? "text-white" : "text-slate-900"
+                        }`}>
                           <Globe className="w-4 h-4" />
                           Website URL
                         </Label>
@@ -511,20 +544,16 @@ export default function APKBuilder() {
                           placeholder="https://example.com"
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
-                          className={
-                            isDarkMode
-                              ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                              : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
+                          className={isDarkMode
+                            ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                            : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
                           }
                           required
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="appName"
-                          className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}
-                        >
+                        <Label htmlFor="appName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                           App Name
                         </Label>
                         <Input
@@ -533,20 +562,16 @@ export default function APKBuilder() {
                           placeholder="Enter app name"
                           value={appName}
                           onChange={(e) => setAppName(e.target.value)}
-                          className={
-                            isDarkMode
-                              ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                              : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
+                          className={isDarkMode
+                            ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                            : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
                           }
                           required
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label
-                          htmlFor="hostName"
-                          className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}
-                        >
+                        <Label htmlFor="hostName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
                           Domain (auto-filled, editable)
                         </Label>
                         <Input
@@ -555,10 +580,9 @@ export default function APKBuilder() {
                           placeholder="example.com"
                           value={hostName}
                           onChange={(e) => setHostName(e.target.value)}
-                          className={
-                            isDarkMode
-                              ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                              : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
+                          className={isDarkMode
+                            ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                            : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
                           }
                           required
                         />
@@ -585,12 +609,9 @@ export default function APKBuilder() {
                           backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc'
                         }}>
                           <div className="space-y-2">
-                            <Label
-                              htmlFor="themeColor"
-                              className={`font-medium flex items-center gap-2 ${
-                                isDarkMode ? "text-white" : "text-slate-900"
-                              }`}
-                            >
+                            <Label htmlFor="themeColor" className={`font-medium flex items-center gap-2 ${
+                              isDarkMode ? "text-white" : "text-slate-900"
+                            }`}>
                               Theme Color
                             </Label>
                             <div className="flex gap-2">
@@ -605,22 +626,18 @@ export default function APKBuilder() {
                                 type="text"
                                 value={themeColor}
                                 onChange={(e) => setThemeColor(e.target.value)}
-                                className={
-                                  isDarkMode
-                                    ? "flex-1 bg-slate-800 border-slate-700 text-white"
-                                    : "flex-1 bg-white border-slate-300 text-slate-900"
+                                className={isDarkMode
+                                  ? "flex-1 bg-slate-800 border-slate-700 text-white"
+                                  : "flex-1 bg-white border-slate-300 text-slate-900"
                                 }
                               />
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label
-                              htmlFor="themeColorDark"
-                              className={`font-medium flex items-center gap-2 ${
-                                isDarkMode ? "text-white" : "text-slate-900"
-                              }`}
-                            >
+                            <Label htmlFor="themeColorDark" className={`font-medium flex items-center gap-2 ${
+                              isDarkMode ? "text-white" : "text-slate-900"
+                            }`}>
                               Theme Color (Dark Mode)
                             </Label>
                             <div className="flex gap-2">
@@ -635,22 +652,18 @@ export default function APKBuilder() {
                                 type="text"
                                 value={themeColorDark}
                                 onChange={(e) => setThemeColorDark(e.target.value)}
-                                className={
-                                  isDarkMode
-                                    ? "flex-1 bg-slate-800 border-slate-700 text-white"
-                                    : "flex-1 bg-white border-slate-300 text-slate-900"
+                                className={isDarkMode
+                                  ? "flex-1 bg-slate-800 border-slate-700 text-white"
+                                  : "flex-1 bg-white border-slate-300 text-slate-900"
                                 }
                               />
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label
-                              htmlFor="backgroundColor"
-                              className={`font-medium flex items-center gap-2 ${
-                                isDarkMode ? "text-white" : "text-slate-900"
-                              }`}
-                            >
+                            <Label htmlFor="backgroundColor" className={`font-medium flex items-center gap-2 ${
+                              isDarkMode ? "text-white" : "text-slate-900"
+                            }`}>
                               Background Color
                             </Label>
                             <div className="flex gap-2">
@@ -665,10 +678,9 @@ export default function APKBuilder() {
                                 type="text"
                                 value={backgroundColor}
                                 onChange={(e) => setBackgroundColor(e.target.value)}
-                                className={
-                                  isDarkMode
-                                    ? "flex-1 bg-slate-800 border-slate-700 text-white"
-                                    : "flex-1 bg-white border-slate-300 text-slate-900"
+                                className={isDarkMode
+                                  ? "flex-1 bg-slate-800 border-slate-700 text-white"
+                                  : "flex-1 bg-white border-slate-300 text-slate-900"
                                 }
                               />
                             </div>
@@ -706,11 +718,9 @@ export default function APKBuilder() {
                       </div>
 
                       <div className="flex flex-col items-center gap-3 mb-8">
-                        <div
-                          className={`w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border-2 ${
-                            isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
-                          }`}
-                        >
+                        <div className={`w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border-2 ${
+                          isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
+                        }`}>
                           <div 
                             className="w-12 h-12 rounded-xl flex items-center justify-center"
                             style={{ background: `linear-gradient(to bottom right, ${themeColor}, ${themeColorDark})` }}
@@ -718,11 +728,9 @@ export default function APKBuilder() {
                             <span className="text-white font-bold text-lg">{appName.charAt(0)}</span>
                           </div>
                         </div>
-                        <p
-                          className={`text-sm font-semibold max-w-[80px] text-center leading-tight ${
-                            isDarkMode ? "text-white" : "text-slate-900"
-                          }`}
-                        >
+                        <p className={`text-sm font-semibold max-w-[80px] text-center leading-tight ${
+                          isDarkMode ? "text-white" : "text-slate-900"
+                        }`}>
                           {appName}
                         </p>
                       </div>
