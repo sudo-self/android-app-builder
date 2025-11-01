@@ -145,6 +145,18 @@ export default function APKBuilder() {
     }
   }
 
+  const validateWebsite = async (url: string): Promise<boolean> => {
+    try {
+      const urlObj = new URL(url)
+      if (!urlObj.hostname || !urlObj.protocol.startsWith('http')) {
+        return false
+      }
+      return true
+    } catch (e) {
+      return false
+    }
+  }
+
   const triggerGitHubAction = async (buildData: any) => {
     if (!GITHUB_TOKEN) {
       throw new Error('GitHub token not configured. Please set NEXT_PUBLIC_GITHUB_TOKEN.')
@@ -212,6 +224,13 @@ export default function APKBuilder() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (url && appName && hostName) {
+      // Validate website format before proceeding
+      const isValidWebsite = await validateWebsite(url)
+      if (!isValidWebsite) {
+        setTerminalLogs(["Invalid website URL format. Please include http:// or https://"])
+        return
+      }
+
       setIsBuilding(true)
       setTerminalLogs([])
       setGithubRunId(null)
