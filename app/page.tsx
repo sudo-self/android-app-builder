@@ -648,9 +648,9 @@ export default function APKBuilder() {
                     className="hover:opacity-80 transition-opacity"
                   >
                     <img 
-                      src="https://img.shields.io/badge/-sudo--self-lightgrey?style=plastic&logo=github" 
+                      src="https://img.shields.io/badge/-apk--builder--actions-lightgrey?style=plastic&logo=github" 
                       alt="sudo-self" 
-                      className="h-4"
+                      className="h-5"
                     />
                   </a>
                 </div>
