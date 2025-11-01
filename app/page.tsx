@@ -580,7 +580,7 @@ export default function APKBuilder() {
                         onClick={() => setShowAdvanced(!showAdvanced)}
                         variant="ghost"
                         className={`w-full flex items-center justify-center gap-2 ${
-                          isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                          isDarkMode ? "text-slate-400" : "text-slate-600"
                         }`}
                       >
                         <Palette className="w-4 h-4" />
