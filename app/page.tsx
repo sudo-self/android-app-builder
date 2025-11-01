@@ -656,13 +656,13 @@ export default function APKBuilder() {
                   )}
                 </div>
 
-                {/* Footer */}
+              
                 <div className={`h-6 flex items-center justify-center border-t ${
                   isDarkMode 
                     ? "bg-slate-900 border-slate-800 text-slate-400" 
                     : "bg-slate-100 border-slate-300 text-slate-600"
                 } rounded-b-[2.5rem]`}>
-                  <p className="text-xs font-medium">GitHub<span className="text-[#3DDC84]">@sudo-self</span></p>
+                  <p className="text-xs font-medium">GitHub.com/&nbsp;<span className="text-[#55377B]">@sudo-self</span></p>
                 </div>
               </>
             )}
