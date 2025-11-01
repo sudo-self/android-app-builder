@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key } from "lucide-react"
+import GitHubButton from 'react-github-btn'
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
@@ -27,21 +28,6 @@ export default function APKBuilder() {
   const [buildStartTime, setBuildStartTime] = useState<number>(0)
   const [showAppKey, setShowAppKey] = useState(false)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    // Load GitHub buttons script
-    const script = document.createElement('script')
-    script.src = 'https://buttons.github.io/buttons.js'
-    script.async = true
-    script.defer = true
-    document.head.appendChild(script)
-
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     if (url) {
@@ -411,7 +397,7 @@ export default function APKBuilder() {
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">JesseJesse.com</span>
+                        <span className="ml-2">apk.jessejesse.com</span>
                       </div>
 
                       <div className="space-y-2">
@@ -442,7 +428,7 @@ export default function APKBuilder() {
                               rel="noopener noreferrer"
                               className="underline hover:no-underline hover:pink-500"
                             >
-                              view on GitHub
+                              source code on GitHub
                             </a>
                           </div>
                         )}
@@ -455,7 +441,7 @@ export default function APKBuilder() {
                           <Github className="w-8 h-8 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          Android APK Builder
+                          Android App Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                           build Android apps in seconds
@@ -497,7 +483,7 @@ export default function APKBuilder() {
                         <Input
                           id="appName"
                           type="text"
-                          placeholder="enter app name"
+                          placeholder="Enter app name"
                           value={appName}
                           onChange={(e) => setAppName(e.target.value)}
                           className={
@@ -514,7 +500,7 @@ export default function APKBuilder() {
                           htmlFor="hostName"
                           className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}
                         >
-                          Domain Name (.com .org .net)
+                          Domain (.com .org .net)
                         </Label>
                         <Input
                           id="hostName"
@@ -530,7 +516,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                        low quality connections may take 2-5 mins
+                        slower connections builds may take 2-3 mins
                         </p>
                       </div>
 
@@ -657,17 +643,15 @@ export default function APKBuilder() {
                     : "bg-slate-100 border-slate-300"
                 } rounded-b-[2.5rem]`}>
                   <div className="scale-75 transform origin-center">
-                    <a 
-                      className="github-button" 
+                    <GitHubButton 
                       href="https://github.com/sudo-self/apk-builder-actions" 
                       data-color-scheme="no-preference: light; light: light; dark: light;" 
                       data-icon="octicon-star" 
                       data-size="large" 
-                      data-show-count="false" 
                       aria-label="Star sudo-self/apk-builder-actions on GitHub"
                     >
                       Star
-                    </a>
+                    </GitHubButton>
                   </div>
                 </div>
               </>
