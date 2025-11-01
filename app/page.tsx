@@ -332,14 +332,16 @@ export default function APKBuilder() {
             {showBootScreen ? (
               <div className="h-full bg-black flex flex-col items-center justify-center">
                 <div className="animate-in fade-in zoom-in duration-1000">
-                  <Github className="w-32 h-32 text-[#3DDC84] mb-8" />
+                  <svg className="w-32 h-32 text-[#3DDC84] mb-8" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C4.8 11.16 3.5 13.84 3.5 16.5V19h17v-2.5c0-2.66-1.3-5.34-2.9-7.02zM7 17.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z" />
+                  </svg>
                 </div>
                 <div className="flex gap-2 mb-4">
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.3s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">APK Builder</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">Android</p>
               </div>
             ) : (
               <>
@@ -354,7 +356,9 @@ export default function APKBuilder() {
                     <span className="opacity-80">{formatDate(currentTime)}</span>
                   </div>
                   <div className="flex gap-3 items-center text-[#3DDC84]">
-                    <Github className="w-4 h-4" />
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C4.8 11.16 3.5 13.84 3.5 16.5V19h17v-2.5c0-2.66-1.3-5.34-2.9-7.02zM7 17.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z" />
+                    </svg>
                     <button
                       onClick={() => setIsDarkMode(!isDarkMode)}
                       className="hover:opacity-70 transition-opacity"
@@ -362,6 +366,8 @@ export default function APKBuilder() {
                     >
                       {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                     </button>
+                    <div className="w-4 h-3 border border-current rounded-sm" />
+                    <div className="w-1 h-2 bg-current rounded-sm" />
                   </div>
                 </div>
 
@@ -423,7 +429,7 @@ export default function APKBuilder() {
                           Android App Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Create a working Android app in minutes
+                          build Android apps in seconds
                         </p>
                       </div>
 
@@ -436,7 +442,7 @@ export default function APKBuilder() {
                           }`}
                         >
                           <Globe className="w-4 h-4" />
-                          Website URL
+                          Website (URL app opens on launch)
                         </Label>
                         <Input
                           id="url"
@@ -482,7 +488,7 @@ export default function APKBuilder() {
                           htmlFor="hostName"
                           className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}
                         >
-                          Domain Name
+                          Domain (https://)
                         </Label>
                         <Input
                           id="hostName"
@@ -498,7 +504,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                         (New Builds can take 2-5 mins)
+                         new app builds can take up to 5 mins
                         </p>
                       </div>
 
