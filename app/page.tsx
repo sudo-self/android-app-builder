@@ -29,6 +29,19 @@ export default function APKBuilder() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
+    // Load GitHub buttons script
+    const script = document.createElement('script')
+    script.src = 'https://buttons.github.io/buttons.js'
+    script.async = true
+    script.defer = true
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [])
+
+  useEffect(() => {
     if (url) {
       try {
         const urlObj = new URL(url)
@@ -642,16 +655,14 @@ export default function APKBuilder() {
                     : "bg-slate-100 border-slate-300 text-slate-600"
                 } rounded-b-[2.5rem]`}>
                   <a 
-                    href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:opacity-80 transition-opacity"
+                    className="github-button" 
+                    href="https://github.com/sudo-self/apk-builder-actions" 
+                    data-color-scheme="no-preference: light; light: light; dark: light;" 
+                    data-icon="octicon-star" 
+                    data-size="large" 
+                    aria-label="Star sudo-self/apk-builder-actions on GitHub"
                   >
-                    <img 
-                      src="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml/badge.svg" 
-                      alt="APK Builder" 
-                      className="h-4"
-                    />
+                    Star
                   </a>
                 </div>
               </>
