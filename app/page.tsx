@@ -687,9 +687,8 @@ export default function APKBuilder() {
                     </form>
                   )}
                 </div>
-
-             <div
-  className={`h-8 flex items-center justify-center border-t ${
+<div
+  className={`h-8 flex items-center justify-center gap-2 border-t ${
     isDarkMode
       ? "bg-slate-900 border-slate-800"
       : "bg-slate-100 border-slate-300"
@@ -707,7 +706,22 @@ export default function APKBuilder() {
       className="h-4"
     />
   </a>
+
+
+  <a
+    href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="hover:opacity-80 transition-opacity"
+  >
+    <img
+      src="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml/badge.svg"
+      alt="APK Builder Workflow Status"
+      className="h-4"
+    />
+  </a>
 </div>
+
               </>
             )}
           </div>
