@@ -533,7 +533,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                        lower quality connections may take 2-3 mins
+                        slower connections builds may take 2-3 mins
                         </p>
                       </div>
 
@@ -612,7 +612,7 @@ export default function APKBuilder() {
                             }`}>
                               <div className="flex items-center justify-between mb-2">
                                 <h3 className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                                  Signing Key
+                                  App Signing Key
                                 </h3>
                                 <Button
                                   onClick={copyAppKey}
@@ -656,13 +656,23 @@ export default function APKBuilder() {
                   )}
                 </div>
 
-              
                 <div className={`h-6 flex items-center justify-center border-t ${
                   isDarkMode 
                     ? "bg-slate-900 border-slate-800 text-slate-400" 
                     : "bg-slate-100 border-slate-300 text-slate-600"
                 } rounded-b-[2.5rem]`}>
-                  <p className="text-xs font-medium">GitHub.com/&nbsp;<span className="text-[#55377B]">@sudo-self</span></p>
+                  <a 
+                    href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <img 
+                      src="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml/badge.svg" 
+                      alt="APK Builder" 
+                      className="h-4"
+                    />
+                  </a>
                 </div>
               </>
             )}
