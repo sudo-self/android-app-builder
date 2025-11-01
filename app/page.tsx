@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key } from "lucide-react"
 
-
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
 const GITHUB_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN
@@ -60,7 +59,6 @@ export default function APKBuilder() {
     return () => clearInterval(timer)
   }, [])
 
-
   useEffect(() => {
     if (!isBuilding || !githubRunId) return
 
@@ -82,20 +80,21 @@ export default function APKBuilder() {
           setIsBuilding(false)
           setTerminalLogs(prev => [...prev, "❌ Build failed. Check GitHub Actions for details."])
         }
-        // If still running, continue polling
       } catch (error) {
         console.error('Error polling GitHub status:', error)
       }
-    }, 5000) // Poll every 5 seconds
+    }, 5000)
 
     return () => clearInterval(pollInterval)
   }, [isBuilding, githubRunId])
 
   const checkBuildStatus = async (runId: string): Promise<{ status: string; artifactUrl?: string }> => {
-    if (!GITHUB_TOKEN) throw new Error('GitHub token not configured')
+    if (!GITHUB_TOKEN) {
+      console.error('GitHub token not configured')
+      return { status: 'unknown' }
+    }
     
     try {
-      // Check run status
       const runResponse = await fetch(
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`,
         {
@@ -106,13 +105,15 @@ export default function APKBuilder() {
         }
       )
       
-      if (!runResponse.ok) throw new Error('Failed to check build status')
+      if (!runResponse.ok) {
+        console.error('Failed to check build status:', runResponse.status)
+        return { status: 'unknown' }
+      }
       
       const runData = await runResponse.json()
       
       if (runData.status === 'completed') {
         if (runData.conclusion === 'success') {
-          // Get artifacts
           const artifactsResponse = await fetch(
             `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
             {
@@ -171,46 +172,66 @@ export default function APKBuilder() {
       throw new Error('GitHub token not configured. Please set NEXT_PUBLIC_GITHUB_TOKEN.')
     }
 
-    const response = await fetch(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          event_type: 'apk_build',
-          client_payload: buildData
-        })
+    console.log('Triggering GitHub Action with data:', buildData)
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            event_type: 'apk_build',
+            client_payload: buildData
+          })
+        }
+      )
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('GitHub API error:', response.status, errorText)
+        throw new Error(`GitHub API error: ${response.status}`)
       }
-    )
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`GitHub API error: ${response.status} - ${errorText}`)
-    }
+      console.log('GitHub Action triggered successfully')
 
-    // Get the workflow run ID
-    const runsResponse = await fetch(
-      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=1`,
-      {
-        headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json'
+      // Wait a moment for the run to be created
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Get the workflow run ID
+      const runsResponse = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=5`,
+        {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      )
+
+      if (runsResponse.ok) {
+        const runsData = await runsResponse.json()
+        console.log('Found workflow runs:', runsData.workflow_runs?.length)
+        
+        if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+          // Find the most recent run that matches our build ID
+          const recentRun = runsData.workflow_runs[0]
+          console.log('Most recent run:', recentRun.id, recentRun.status)
+          return recentRun.id
         }
       }
-    )
 
-    if (runsResponse.ok) {
-      const runsData = await runsResponse.json()
-      if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-        return runsData.workflow_runs[0].id
-      }
+      console.warn('No workflow runs found')
+      return null
+
+    } catch (error) {
+      console.error('Error triggering GitHub action:', error)
+      throw error
     }
-
-    return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,6 +245,9 @@ export default function APKBuilder() {
       setShowAppKey(false)
 
       try {
+        console.log('Starting build process...')
+        console.log('Environment check - GitHub Token:', GITHUB_TOKEN ? 'Set' : 'Not set')
+
         // Start terminal simulation
         simulateTerminalOutput()
 
@@ -241,21 +265,34 @@ export default function APKBuilder() {
           backgroundColor: '#FFFFFF'
         }
 
+        console.log('Sending build data:', buildData)
+
         // Trigger GitHub Actions workflow
         const runId = await triggerGitHubAction(buildData)
         
         if (runId) {
+          console.log('GitHub Run ID received:', runId)
           setGithubRunId(runId.toString())
-          setTerminalLogs(prev => [...prev, `📋 GitHub Actions run started: #${runId}`])
-          setTerminalLogs(prev => [...prev, `🔗 Monitoring build progress...`])
+          setTerminalLogs(prev => [...prev, `GitHub Actions run started: #${runId}`])
+          setTerminalLogs(prev => [...prev, `Monitoring build progress...`])
         } else {
-          throw new Error('Failed to start GitHub Actions workflow')
+          throw new Error('Failed to get GitHub Actions run ID')
         }
 
       } catch (error: any) {
         console.error('Build error:', error)
-        setTerminalLogs(prev => [...prev, `❌ Build failed: ${error.message}`])
-        setTerminalLogs(prev => [...prev, "Please check your configuration and try again"])
+        let errorMessage = error.message
+        
+        if (errorMessage.includes('GitHub API error: 404')) {
+          errorMessage = 'GitHub repository not found or access denied'
+        } else if (errorMessage.includes('GitHub API error: 403')) {
+          errorMessage = 'GitHub token invalid or missing permissions'
+        } else if (errorMessage.includes('GitHub token not configured')) {
+          errorMessage = 'GitHub token not configured. Check your environment variables.'
+        }
+        
+        setTerminalLogs(prev => [...prev, `❌ Build failed: ${errorMessage}`])
+        setTerminalLogs(prev => [...prev, "Please check the console for details"])
         setTimeout(() => {
           setIsBuilding(false)
         }, 3000)
@@ -273,10 +310,8 @@ export default function APKBuilder() {
 
   const downloadAPK = async () => {
     if (artifactUrl) {
-
       window.open(artifactUrl, '_blank')
     } else if (githubRunId) {
-
       window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
     }
   }
@@ -289,7 +324,6 @@ export default function APKBuilder() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-
       const textArea = document.createElement('textarea')
       textArea.value = keyInfo
       document.body.appendChild(textArea)
@@ -318,18 +352,17 @@ export default function APKBuilder() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84] overflow-hidden">
+          {/* Phone Notch */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-black rounded-b-3xl z-10" />
 
-      <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84] overflow-hidden">
-  {/* Phone Notch */}
-  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-black rounded-b-3xl z-10" />
-
-  {/* Phone Screen */}
-  <div
-    className={`absolute inset-2 rounded-[2.6rem] overflow-hidden transition-colors ${
-      isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
-    }`}
-  >     
-    {showBootScreen ? (
+          {/* Phone Screen */}
+          <div
+            className={`absolute inset-2 rounded-[2.6rem] overflow-hidden transition-colors ${
+              isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
+            }`}
+          >     
+            {showBootScreen ? (
               <div className="h-full bg-black flex flex-col items-center justify-center">
                 <div className="animate-in fade-in zoom-in duration-1000">
                   <svg className="w-32 h-32 text-[#3DDC84] mb-8" viewBox="0 0 24 24" fill="currentColor">
@@ -394,7 +427,6 @@ export default function APKBuilder() {
                           </div>
                         ))}
                         
-                 
                         <div className="flex items-center gap-2 text-green-400 text-sm">
                           <span className="text-green-600">$</span>
                           <div className="flex gap-1">
@@ -482,7 +514,6 @@ export default function APKBuilder() {
                         />
                       </div>
 
-                    
                       <div className="space-y-2">
                         <Label
                           htmlFor="hostName"
