@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, Globe, Smartphone, Moon, Sun, Download, RefreshCw } from "lucide-react"
+import { Upload, Globe, Smartphone, Moon, Sun, Download, RefreshCw, Github } from "lucide-react"
 
 const DEFAULT_ICONS = [
   { id: 1, name: "Rocket", color: "bg-blue-500", svg: (
@@ -32,10 +32,10 @@ const DEFAULT_ICONS = [
   )},
 ]
 
-// Backend API URL - Updated to your Cloud Run backend
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://twa-backend-359911049668.europe-west1.run.app' 
-  : 'http://localhost:8081'
+// GitHub Actions Configuration
+const GITHUB_OWNER = 'sudo-self'
+const GITHUB_REPO = 'apk-builder-actions'
+const GITHUB_TOKEN = process.env.NEXT_PUBLIC_GITHUB_TOKEN
 
 export default function APKBuilder() {
   const [url, setUrl] = useState("")
@@ -52,6 +52,9 @@ export default function APKBuilder() {
   const [showBootScreen, setShowBootScreen] = useState(true)
   const [buildId, setBuildId] = useState<string | null>(null)
   const [buildProgress, setBuildProgress] = useState(0)
+  const [githubRunId, setGithubRunId] = useState<string | null>(null)
+  const [artifactUrl, setArtifactUrl] = useState<string | null>(null)
+  const [buildStartTime, setBuildStartTime] = useState<number>(0)
 
   // Extract hostname from URL when URL changes
   useEffect(() => {
@@ -84,6 +87,100 @@ export default function APKBuilder() {
     return () => clearInterval(timer)
   }, [])
 
+  // Poll GitHub Actions status when build is in progress
+  useEffect(() => {
+    if (!isBuilding || !githubRunId) return
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const result = await checkBuildStatus(githubRunId)
+        
+        if (result.status === 'success') {
+          clearInterval(pollInterval)
+          setIsBuilding(false)
+          setIsComplete(true)
+          setTerminalLogs(prev => [...prev, "✅ Build completed! APK is ready for download."])
+          setBuildProgress(100)
+          
+          if (result.artifactUrl) {
+            setArtifactUrl(result.artifactUrl)
+          }
+        } else if (result.status === 'failed') {
+          clearInterval(pollInterval)
+          setIsBuilding(false)
+          setTerminalLogs(prev => [...prev, "❌ Build failed. Check GitHub Actions for details."])
+        } else if (result.status === 'in_progress') {
+          // Update progress based on time elapsed
+          if (buildStartTime > 0) {
+            const elapsed = Date.now() - buildStartTime
+            const estimatedTotal = 3 * 60 * 1000 // 3 minutes estimate
+            const progress = Math.min(95, Math.floor((elapsed / estimatedTotal) * 100))
+            setBuildProgress(progress)
+          }
+        }
+      } catch (error) {
+        console.error('Error polling GitHub status:', error)
+      }
+    }, 10000) // Poll every 10 seconds
+
+    return () => clearInterval(pollInterval)
+  }, [isBuilding, githubRunId, buildStartTime])
+
+  const checkBuildStatus = async (runId: string): Promise<{ status: string; artifactUrl?: string }> => {
+    if (!GITHUB_TOKEN) throw new Error('GitHub token not configured')
+    
+    try {
+      // Check run status
+      const runResponse = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`,
+        {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      )
+      
+      if (!runResponse.ok) throw new Error('Failed to check build status')
+      
+      const runData = await runResponse.json()
+      
+      if (runData.status === 'completed') {
+        if (runData.conclusion === 'success') {
+          // Get artifacts
+          const artifactsResponse = await fetch(
+            `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
+            {
+              headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+              }
+            }
+          )
+          
+          if (artifactsResponse.ok) {
+            const artifactsData = await artifactsResponse.json()
+            if (artifactsData.artifacts && artifactsData.artifacts.length > 0) {
+              const artifact = artifactsData.artifacts[0]
+              return { 
+                status: 'success', 
+                artifactUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts/${artifact.id}`
+              }
+            }
+          }
+          return { status: 'success' }
+        } else {
+          return { status: 'failed' }
+        }
+      }
+      
+      return { status: runData.status }
+    } catch (error) {
+      console.error('Error checking build status:', error)
+      return { status: 'unknown' }
+    }
+  }
+
   const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -111,23 +208,70 @@ export default function APKBuilder() {
 
   const simulateBuildProgress = async () => {
     const steps = [
-      { message: "Starting APK build process...", progress: 10 },
-      { message: "Validating configuration...", progress: 20 },
-      { message: "Setting up BubbleWrap project...", progress: 30 },
-      { message: "Configuring Trusted Web Activity...", progress: 40 },
-      { message: "Building Android project structure...", progress: 50 },
-      { message: "Compiling resources...", progress: 60 },
-      { message: "Generating application manifest...", progress: 70 },
-      { message: "Building APK package...", progress: 80 },
-      { message: "Signing application...", progress: 90 },
-      { message: "APK created successfully!", progress: 100 }
+      { message: "🚀 Starting APK build process...", progress: 10 },
+      { message: "✅ Validating configuration...", progress: 20 },
+      { message: "⚙️ Setting up Android project...", progress: 30 },
+      { message: "🌐 Configuring Trusted Web Activity...", progress: 40 },
+      { message: "📱 Building application structure...", progress: 50 },
+      { message: "🔨 Compiling resources...", progress: 60 },
+      { message: "📄 Generating application manifest...", progress: 70 },
+      { message: "📦 Building APK package...", progress: 80 },
+      { message: "🔐 Signing application...", progress: 90 },
+      { message: "⏳ Waiting for build completion...", progress: 95 }
     ]
 
     for (const step of steps) {
       setTerminalLogs(prev => [...prev, step.message])
       setBuildProgress(step.progress)
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise(resolve => setTimeout(resolve, 2000))
     }
+  }
+
+  const triggerGitHubAction = async (buildData: any) => {
+    if (!GITHUB_TOKEN) {
+      throw new Error('GitHub token not configured. Please set NEXT_PUBLIC_GITHUB_TOKEN.')
+    }
+
+    const response = await fetch(
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          event_type: 'apk_build',
+          client_payload: buildData
+        })
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`GitHub API error: ${response.status} - ${errorText}`)
+    }
+
+    // Get the workflow run ID
+    const runsResponse = await fetch(
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=1`,
+      {
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    )
+
+    if (runsResponse.ok) {
+      const runsData = await runsResponse.json()
+      if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+        return runsData.workflow_runs[0].id
+      }
+    }
+
+    return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,60 +280,43 @@ export default function APKBuilder() {
       setIsBuilding(true)
       setTerminalLogs([])
       setBuildProgress(0)
+      setGithubRunId(null)
+      setArtifactUrl(null)
+      setBuildStartTime(Date.now())
 
       try {
         // Start progress simulation
         simulateBuildProgress()
 
-        const formData = new FormData()
-        formData.append('url', url)
-        formData.append('app_name', appName)
-        formData.append('host_name', hostName)
-        formData.append('theme_color', '#171717')
-        formData.append('background_color', '#FFFFFF')
-        
-        if (uploadedIconFile) {
-          formData.append('icon', uploadedIconFile)
-        } else if (selectedIcon) {
-          // For default icons, you might want to send the icon ID
-          const icon = DEFAULT_ICONS.find(i => i.id === selectedIcon)
-          if (icon) {
-            formData.append('icon_name', icon.name)
-          }
+        const buildId = `build_${Date.now()}`
+        setBuildId(buildId)
+
+        const buildData = {
+          buildId,
+          hostName: hostName.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+          launchUrl: '/',
+          name: appName,
+          launcherName: appName,
+          themeColor: '#171717',
+          themeColorDark: '#000000',
+          backgroundColor: '#FFFFFF'
         }
 
-        const response = await fetch(`${API_BASE}/build`, {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          const errorText = await response.text()
-          let errorMessage = 'Build failed'
-          
-          try {
-            const errorData = JSON.parse(errorText)
-            errorMessage = errorData.detail || errorData.message || errorMessage
-          } catch {
-            errorMessage = errorText || errorMessage
-          }
-          
-          throw new Error(errorMessage)
-        }
-
-        const result = await response.json()
-        setBuildId(result.build_id || result.id)
-
-        // Wait for simulation to complete if it's still running
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Trigger GitHub Actions workflow
+        const runId = await triggerGitHubAction(buildData)
         
-        setIsBuilding(false)
-        setIsComplete(true)
+        if (runId) {
+          setGithubRunId(runId.toString())
+          setTerminalLogs(prev => [...prev, `📋 GitHub Actions run started: #${runId}`])
+          setTerminalLogs(prev => [...prev, `🔗 View progress: https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`])
+        } else {
+          throw new Error('Failed to start GitHub Actions workflow')
+        }
 
       } catch (error: any) {
         console.error('Build error:', error)
-        setTerminalLogs(prev => [...prev, `Build failed: ${error.message}`])
-        setTerminalLogs(prev => [...prev, "Please check the URL and try again"])
+        setTerminalLogs(prev => [...prev, `❌ Build failed: ${error.message}`])
+        setTerminalLogs(prev => [...prev, "Please check your configuration and try again"])
         setTimeout(() => {
           setIsBuilding(false)
           setBuildProgress(0)
@@ -220,45 +347,15 @@ export default function APKBuilder() {
   }
 
   const downloadAPK = async () => {
-    if (!buildId) {
-      // Fallback download
-      const blob = new Blob(["This is a demo APK file. In production, this would be your actual APK."], { 
-        type: "application/vnd.android.package-archive" 
-      })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `${appName || "app"}.apk`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-      return
-    }
-
-    try {
-      const response = await fetch(`${API_BASE}/download/${buildId}`)
-      if (!response.ok) throw new Error('Download failed')
-      
-      const blob = await response.blob()
-      
-      // Check if blob is actually an APK file
-      if (blob.size === 0) {
-        throw new Error('Empty file received')
-      }
-      
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `${appName.replace(/\s+/g, '_')}.apk`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(downloadUrl)
-    } catch (error) {
-      console.error('Download error:', error)
-      // Fallback to dummy APK
-      const blob = new Blob(["APK file - download failed, please try again"], { 
+    if (artifactUrl) {
+      // Redirect to GitHub Actions artifact download
+      window.open(artifactUrl, '_blank')
+    } else if (githubRunId) {
+      // Fallback: open GitHub Actions page
+      window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
+    } else {
+      // Final fallback
+      const blob = new Blob(["This APK was built with GitHub Actions. Configure GitHub integration for real APK downloads."], { 
         type: "application/vnd.android.package-archive" 
       })
       const url = URL.createObjectURL(blob)
@@ -283,6 +380,9 @@ export default function APKBuilder() {
     setTerminalLogs([])
     setBuildId(null)
     setBuildProgress(0)
+    setGithubRunId(null)
+    setArtifactUrl(null)
+    setBuildStartTime(0)
   }
 
   return (
@@ -302,16 +402,14 @@ export default function APKBuilder() {
             {showBootScreen ? (
               <div className="h-full bg-black flex flex-col items-center justify-center">
                 <div className="animate-in fade-in zoom-in duration-1000">
-                  <svg className="w-32 h-32 text-[#3DDC84] mb-8" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C4.8 11.16 3.5 13.84 3.5 16.5V19h17v-2.5c0-2.66-1.3-5.34-2.9-7.02zM7 17.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z" />
-                  </svg>
+                  <Github className="w-32 h-32 text-[#3DDC84] mb-8" />
                 </div>
                 <div className="flex gap-2 mb-4">
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.3s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">Android</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">GitHub Actions</p>
               </div>
             ) : (
               <>
@@ -326,9 +424,7 @@ export default function APKBuilder() {
                     <span className="opacity-80">{formatDate(currentTime)}</span>
                   </div>
                   <div className="flex gap-3 items-center text-[#3DDC84]">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C4.8 11.16 3.5 13.84 3.5 16.5V19h17v-2.5c0-2.66-1.3-5.34-2.9-7.02zM7 17.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z" />
-                    </svg>
+                    <Github className="w-4 h-4" />
                     <button
                       onClick={() => setIsDarkMode(!isDarkMode)}
                       className="hover:opacity-70 transition-opacity"
@@ -336,8 +432,6 @@ export default function APKBuilder() {
                     >
                       {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                     </button>
-                    <div className="w-4 h-3 border border-current rounded-sm" />
-                    <div className="w-1 h-2 bg-current rounded-sm" />
                   </div>
                 </div>
 
@@ -368,6 +462,18 @@ export default function APKBuilder() {
                             <span className="text-green-600">$</span> {log}
                           </div>
                         ))}
+                        {githubRunId && (
+                          <div className="text-blue-400 text-xs mt-4">
+                            <a 
+                              href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline hover:no-underline"
+                            >
+                              ↗ View detailed progress on GitHub
+                            </a>
+                          </div>
+                        )}
                         <div className="text-green-400 text-xs animate-pulse">▊</div>
                       </div>
                     </div>
@@ -375,13 +481,13 @@ export default function APKBuilder() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mb-3 shadow-lg">
-                          <Smartphone className="w-8 h-8 text-white" />
+                          <Github className="w-8 h-8 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          {appName || "APP Builder"}
+                          APK Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Create a PWA and publish your app in seconds
+                          Powered by GitHub Actions
                         </p>
                       </div>
 
@@ -533,7 +639,8 @@ export default function APKBuilder() {
                         className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-6 rounded-xl text-base font-semibold shadow-lg transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={!url || !appName || !hostName || (!selectedIcon && !uploadedIcon)}
                       >
-                        Create App
+                        <Github className="w-5 h-5 mr-2" />
+                        Build with GitHub Actions
                       </Button>
                     </form>
                   ) : (
@@ -545,10 +652,10 @@ export default function APKBuilder() {
                           </svg>
                         </div>
                         <h2 className={`text-xl font-bold mb-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          App Created!
+                          Build Complete!
                         </h2>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Your app is ready to install
+                          Your APK is ready for download
                         </p>
                       </div>
 
@@ -578,6 +685,21 @@ export default function APKBuilder() {
                         Download APK
                       </Button>
 
+                      {githubRunId && (
+                        <Button
+                          onClick={() => window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')}
+                          variant="outline"
+                          className={`w-full mb-4 transition-all ${
+                            isDarkMode
+                              ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+                              : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
+                          }`}
+                        >
+                          <Github className="w-5 h-5 mr-2" />
+                          View on GitHub
+                        </Button>
+                      )}
+
                       <Button
                         onClick={resetForm}
                         variant="outline"
@@ -588,7 +710,7 @@ export default function APKBuilder() {
                         }`}
                       >
                         <RefreshCw className="w-5 h-5 mr-2" />
-                        Create Another App
+                        Build Another App
                       </Button>
                     </div>
                   )}
