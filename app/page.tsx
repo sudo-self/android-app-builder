@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette } from "lucide-react"
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
@@ -15,6 +15,9 @@ export default function APKBuilder() {
   const [url, setUrl] = useState("")
   const [appName, setAppName] = useState("")
   const [hostName, setHostName] = useState("")
+  const [themeColor, setThemeColor] = useState("#171717")
+  const [themeColorDark, setThemeColorDark] = useState("#000000")
+  const [backgroundColor, setBackgroundColor] = useState("#FFFFFF")
   const [isComplete, setIsComplete] = useState(false)
   const [isBuilding, setIsBuilding] = useState(false)
   const [terminalLogs, setTerminalLogs] = useState<string[]>([])
@@ -27,6 +30,7 @@ export default function APKBuilder() {
   const [buildStartTime, setBuildStartTime] = useState<number>(0)
   const [showAppKey, setShowAppKey] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     if (url) {
@@ -183,8 +187,13 @@ export default function APKBuilder() {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('GitHub API error:', response.status, errorText)
-        throw new Error(`GitHub API error: ${response.status}`)
+        console.error('GitHub API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+          headers: Object.fromEntries(response.headers.entries())
+        })
+        throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`)
       }
 
       console.log('GitHub Action triggered successfully')
@@ -224,7 +233,6 @@ export default function APKBuilder() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (url && appName && hostName) {
-      // Validate website format before proceeding
       const isValidWebsite = await validateWebsite(url)
       if (!isValidWebsite) {
         setTerminalLogs(["Invalid website URL format. Please include http:// or https://"])
@@ -251,12 +259,12 @@ export default function APKBuilder() {
           launchUrl: '/',
           name: appName,
           launcherName: appName,
-          themeColor: '#171717',
-          themeColorDark: '#000000',
-          backgroundColor: '#FFFFFF'
+          themeColor: themeColor,
+          themeColorDark: themeColorDark,
+          backgroundColor: backgroundColor
         }
-
-        console.log('Sending build data:', buildData)
+        
+        console.log('Build data being sent to GitHub:', JSON.stringify(buildData, null, 2))
 
         setTerminalLogs(prev => [...prev, "Starting build process..."])
         
@@ -330,6 +338,9 @@ export default function APKBuilder() {
     setUrl("")
     setAppName("")
     setHostName("")
+    setThemeColor("#171717")
+    setThemeColorDark("#000000")
+    setBackgroundColor("#FFFFFF")
     setTerminalLogs([])
     setBuildId(null)
     setGithubRunId(null)
@@ -337,6 +348,7 @@ export default function APKBuilder() {
     setBuildStartTime(0)
     setShowAppKey(false)
     setCopied(false)
+    setShowAdvanced(false)
   }
 
   return (
@@ -425,17 +437,17 @@ export default function APKBuilder() {
                               href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="underline hover:no-underline hover:pink-500"
+                              className="underline hover:no-underline hover:text-pink-500"
                             >
-                              source code on GitHub
+                              view build on GitHub
                             </a>
                           </div>
                         )}
                       </div>
                     </div>
                   ) : !isComplete ? (
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="text-center mb-8">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="text-center mb-6">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl mb-3 shadow-lg">
                           <Github className="w-8 h-8 text-white" />
                         </div>
@@ -514,10 +526,120 @@ export default function APKBuilder() {
                           }
                           required
                         />
-                        <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                        slower connections builds may take 2-3 mins
-                        </p>
                       </div>
+
+                      <Button
+                        type="button"
+                        onClick={() => setShowAdvanced(!showAdvanced)}
+                        variant="ghost"
+                        className={`w-full flex items-center justify-center gap-2 ${
+                          isDarkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                        }`}
+                      >
+                        <Palette className="w-4 h-4" />
+                        {showAdvanced ? "Hide" : "Show"} Advanced Options
+                      </Button>
+
+                      {showAdvanced && (
+                        <div className="space-y-4 p-4 rounded-lg border" style={{
+                          borderColor: isDarkMode ? '#334155' : '#e2e8f0',
+                          backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc'
+                        }}>
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="themeColor"
+                              className={`font-medium flex items-center gap-2 ${
+                                isDarkMode ? "text-white" : "text-slate-900"
+                              }`}
+                            >
+                              Theme Color
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="themeColor"
+                                type="color"
+                                value={themeColor}
+                                onChange={(e) => setThemeColor(e.target.value)}
+                                className="w-16 h-10 p-1 cursor-pointer"
+                              />
+                              <Input
+                                type="text"
+                                value={themeColor}
+                                onChange={(e) => setThemeColor(e.target.value)}
+                                className={
+                                  isDarkMode
+                                    ? "flex-1 bg-slate-800 border-slate-700 text-white"
+                                    : "flex-1 bg-white border-slate-300 text-slate-900"
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="themeColorDark"
+                              className={`font-medium flex items-center gap-2 ${
+                                isDarkMode ? "text-white" : "text-slate-900"
+                              }`}
+                            >
+                              Theme Color (Dark Mode)
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="themeColorDark"
+                                type="color"
+                                value={themeColorDark}
+                                onChange={(e) => setThemeColorDark(e.target.value)}
+                                className="w-16 h-10 p-1 cursor-pointer"
+                              />
+                              <Input
+                                type="text"
+                                value={themeColorDark}
+                                onChange={(e) => setThemeColorDark(e.target.value)}
+                                className={
+                                  isDarkMode
+                                    ? "flex-1 bg-slate-800 border-slate-700 text-white"
+                                    : "flex-1 bg-white border-slate-300 text-slate-900"
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="backgroundColor"
+                              className={`font-medium flex items-center gap-2 ${
+                                isDarkMode ? "text-white" : "text-slate-900"
+                              }`}
+                            >
+                              Background Color
+                            </Label>
+                            <div className="flex gap-2">
+                              <Input
+                                id="backgroundColor"
+                                type="color"
+                                value={backgroundColor}
+                                onChange={(e) => setBackgroundColor(e.target.value)}
+                                className="w-16 h-10 p-1 cursor-pointer"
+                              />
+                              <Input
+                                type="text"
+                                value={backgroundColor}
+                                onChange={(e) => setBackgroundColor(e.target.value)}
+                                className={
+                                  isDarkMode
+                                    ? "flex-1 bg-slate-800 border-slate-700 text-white"
+                                    : "flex-1 bg-white border-slate-300 text-slate-900"
+                                }
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                        builds may take 2-3 minutes
+                      </p>
 
                       <Button
                         type="submit"
@@ -550,7 +672,10 @@ export default function APKBuilder() {
                             isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
                           }`}
                         >
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                          <div 
+                            className="w-12 h-12 rounded-xl flex items-center justify-center"
+                            style={{ background: `linear-gradient(to bottom right, ${themeColor}, ${themeColorDark})` }}
+                          >
                             <span className="text-white font-bold text-lg">{appName.charAt(0)}</span>
                           </div>
                         </div>
@@ -568,7 +693,7 @@ export default function APKBuilder() {
                         className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-6 rounded-xl text-base font-semibold shadow-lg mb-4 transition-all hover:shadow-xl"
                       >
                         <Download className="w-5 h-5 mr-2" />
-                        Download APP
+                        Download APK
                       </Button>
 
                       {githubRunId && (
