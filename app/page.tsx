@@ -5,32 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, Globe, Smartphone, Moon, Sun, Download, RefreshCw, Github } from "lucide-react"
-
-const DEFAULT_ICONS = [
-  { id: 1, name: "Rocket", color: "bg-blue-500", svg: (
-    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  )},
-  { id: 2, name: "Lightning", color: "bg-yellow-500", svg: (
-    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  )},
-  { id: 3, name: "Target", color: "bg-red-500", svg: (
-    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10a2 2 0 1 0 2 2 2 2 0 0 0-2-2z" />
-    </svg>
-  )},
-  { id: 4, name: "Diamond", color: "bg-purple-500", svg: (
-    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2l7 7-7 7-7-7 7-7z" />
-    </svg>
-  )},
-]
+import { Globe, Moon, Sun, Download, RefreshCw, Github } from "lucide-react"
 
 // GitHub Actions Configuration
 const GITHUB_OWNER = 'sudo-self'
@@ -41,9 +16,6 @@ export default function APKBuilder() {
   const [url, setUrl] = useState("")
   const [appName, setAppName] = useState("")
   const [hostName, setHostName] = useState("")
-  const [selectedIcon, setSelectedIcon] = useState<number | null>(null)
-  const [uploadedIcon, setUploadedIcon] = useState<string | null>(null)
-  const [uploadedIconFile, setUploadedIconFile] = useState<File | null>(null)
   const [isComplete, setIsComplete] = useState(false)
   const [isBuilding, setIsBuilding] = useState(false)
   const [terminalLogs, setTerminalLogs] = useState<string[]>([])
@@ -51,7 +23,6 @@ export default function APKBuilder() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [showBootScreen, setShowBootScreen] = useState(true)
   const [buildId, setBuildId] = useState<string | null>(null)
-  const [buildProgress, setBuildProgress] = useState(0)
   const [githubRunId, setGithubRunId] = useState<string | null>(null)
   const [artifactUrl, setArtifactUrl] = useState<string | null>(null)
   const [buildStartTime, setBuildStartTime] = useState<number>(0)
@@ -100,7 +71,6 @@ export default function APKBuilder() {
           setIsBuilding(false)
           setIsComplete(true)
           setTerminalLogs(prev => [...prev, "✅ Build completed! APK is ready for download."])
-          setBuildProgress(100)
           
           if (result.artifactUrl) {
             setArtifactUrl(result.artifactUrl)
@@ -109,22 +79,15 @@ export default function APKBuilder() {
           clearInterval(pollInterval)
           setIsBuilding(false)
           setTerminalLogs(prev => [...prev, "❌ Build failed. Check GitHub Actions for details."])
-        } else if (result.status === 'in_progress') {
-          // Update progress based on time elapsed
-          if (buildStartTime > 0) {
-            const elapsed = Date.now() - buildStartTime
-            const estimatedTotal = 3 * 60 * 1000 // 3 minutes estimate
-            const progress = Math.min(95, Math.floor((elapsed / estimatedTotal) * 100))
-            setBuildProgress(progress)
-          }
         }
+        // If still running, continue polling
       } catch (error) {
         console.error('Error polling GitHub status:', error)
       }
-    }, 10000) // Poll every 10 seconds
+    }, 5000) // Poll every 5 seconds
 
     return () => clearInterval(pollInterval)
-  }, [isBuilding, githubRunId, buildStartTime])
+  }, [isBuilding, githubRunId])
 
   const checkBuildStatus = async (runId: string): Promise<{ status: string; artifactUrl?: string }> => {
     if (!GITHUB_TOKEN) throw new Error('GitHub token not configured')
@@ -181,48 +144,22 @@ export default function APKBuilder() {
     }
   }
 
-  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file')
-        return
-      }
-      
-      // Validate file size (max 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Please upload an image smaller than 2MB')
-        return
-      }
-
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setUploadedIcon(reader.result as string)
-        setUploadedIconFile(file)
-        setSelectedIcon(null)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const simulateBuildProgress = async () => {
+  const simulateTerminalOutput = async () => {
     const steps = [
-      { message: "🚀 Starting APK build process...", progress: 10 },
-      { message: "✅ Validating configuration...", progress: 20 },
-      { message: "⚙️ Setting up Android project...", progress: 30 },
-      { message: "🌐 Configuring Trusted Web Activity...", progress: 40 },
-      { message: "📱 Building application structure...", progress: 50 },
-      { message: "🔨 Compiling resources...", progress: 60 },
-      { message: "📄 Generating application manifest...", progress: 70 },
-      { message: "📦 Building APK package...", progress: 80 },
-      { message: "🔐 Signing application...", progress: 90 },
-      { message: "⏳ Waiting for build completion...", progress: 95 }
+      "🚀 Starting APK build process...",
+      "📋 Validating website configuration...",
+      "⚙️ Setting up Android project structure...",
+      "🌐 Configuring Trusted Web Activity...",
+      "📱 Building application manifest...",
+      "🔨 Compiling resources and assets...",
+      "📦 Packaging APK file...",
+      "🔐 Signing application with release key...",
+      "✅ Build process completed successfully!",
+      "⏳ Uploading artifact to GitHub..."
     ]
 
-    for (const step of steps) {
-      setTerminalLogs(prev => [...prev, step.message])
-      setBuildProgress(step.progress)
+    for (const message of steps) {
+      setTerminalLogs(prev => [...prev, message])
       await new Promise(resolve => setTimeout(resolve, 2000))
     }
   }
@@ -276,17 +213,16 @@ export default function APKBuilder() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (url && appName && hostName && (selectedIcon || uploadedIcon)) {
+    if (url && appName && hostName) {
       setIsBuilding(true)
       setTerminalLogs([])
-      setBuildProgress(0)
       setGithubRunId(null)
       setArtifactUrl(null)
       setBuildStartTime(Date.now())
 
       try {
-        // Start progress simulation
-        simulateBuildProgress()
+        // Start terminal simulation
+        simulateTerminalOutput()
 
         const buildId = `build_${Date.now()}`
         setBuildId(buildId)
@@ -308,7 +244,7 @@ export default function APKBuilder() {
         if (runId) {
           setGithubRunId(runId.toString())
           setTerminalLogs(prev => [...prev, `📋 GitHub Actions run started: #${runId}`])
-          setTerminalLogs(prev => [...prev, `🔗 View progress: https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`])
+          setTerminalLogs(prev => [...prev, `🔗 Monitoring build progress...`])
         } else {
           throw new Error('Failed to start GitHub Actions workflow')
         }
@@ -319,23 +255,9 @@ export default function APKBuilder() {
         setTerminalLogs(prev => [...prev, "Please check your configuration and try again"])
         setTimeout(() => {
           setIsBuilding(false)
-          setBuildProgress(0)
         }, 3000)
       }
     }
-  }
-
-  const getIconDisplay = () => {
-    if (uploadedIcon) {
-      return <img src={uploadedIcon || "/placeholder.svg"} alt="App icon" className="w-full h-full object-cover" />
-    }
-    if (selectedIcon) {
-      const icon = DEFAULT_ICONS.find((i) => i.id === selectedIcon)
-      return icon?.svg
-    }
-    return (
-      <Smartphone className="w-8 h-8 text-white" />
-    )
   }
 
   const formatTime = (date: Date) => {
@@ -353,19 +275,6 @@ export default function APKBuilder() {
     } else if (githubRunId) {
       // Fallback: open GitHub Actions page
       window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
-    } else {
-      // Final fallback
-      const blob = new Blob(["This APK was built with GitHub Actions. Configure GitHub integration for real APK downloads."], { 
-        type: "application/vnd.android.package-archive" 
-      })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `${appName || "app"}.apk`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
     }
   }
 
@@ -374,12 +283,8 @@ export default function APKBuilder() {
     setUrl("")
     setAppName("")
     setHostName("")
-    setSelectedIcon(null)
-    setUploadedIcon(null)
-    setUploadedIconFile(null)
     setTerminalLogs([])
     setBuildId(null)
-    setBuildProgress(0)
     setGithubRunId(null)
     setArtifactUrl(null)
     setBuildStartTime(0)
@@ -409,7 +314,7 @@ export default function APKBuilder() {
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">GitHub Actions</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">APK Builder</p>
               </div>
             ) : (
               <>
@@ -439,42 +344,48 @@ export default function APKBuilder() {
                 <div className="h-[calc(100%-3rem)] overflow-y-auto p-6">
                   {isBuilding ? (
                     <div className="h-full bg-black rounded-xl p-4 overflow-y-auto font-mono">
-                      {/* Progress Bar */}
-                      <div className="mb-4">
-                        <div className="w-full bg-slate-700 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${buildProgress}%` }}
-                          />
-                        </div>
-                        <div className="text-green-400 text-xs mt-1 text-right">
-                          {buildProgress}%
-                        </div>
+                      {/* Terminal Header */}
+                      <div className="flex items-center gap-2 mb-4 text-green-400 text-sm">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span className="ml-2">terminal</span>
                       </div>
 
                       {/* Terminal Logs */}
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {terminalLogs.map((log, index) => (
                           <div
                             key={index}
-                            className="text-green-400 text-xs animate-in fade-in slide-in-from-left-2"
+                            className="text-green-400 text-sm animate-in fade-in slide-in-from-left-2"
                           >
-                            <span className="text-green-600">$</span> {log}
+                            <span className="text-green-600 mr-2">$</span> {log}
                           </div>
                         ))}
+                        
+                        {/* Spinner for current operation */}
+                        <div className="flex items-center gap-2 text-green-400 text-sm">
+                          <span className="text-green-600">$</span>
+                          <div className="flex gap-1">
+                            <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                            <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                          </div>
+                          <span>Building APK...</span>
+                        </div>
+
                         {githubRunId && (
-                          <div className="text-blue-400 text-xs mt-4">
+                          <div className="text-blue-400 text-xs mt-4 pt-2 border-t border-slate-700">
                             <a 
                               href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="underline hover:no-underline"
                             >
-                              ↗ View detailed progress on GitHub
+                              ↗ View live progress on GitHub Actions
                             </a>
                           </div>
                         )}
-                        <div className="text-green-400 text-xs animate-pulse">▊</div>
                       </div>
                     </div>
                   ) : !isComplete ? (
@@ -487,7 +398,7 @@ export default function APKBuilder() {
                           APK Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Powered by GitHub Actions
+                          Convert any website to Android APK
                         </p>
                       </div>
 
@@ -562,85 +473,18 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          The domain your app will open (usually auto-filled from URL)
+                          The domain your app will open (auto-filled from URL)
                         </p>
-                      </div>
-
-                      {/* Icon Selection */}
-                      <div className="space-y-3">
-                        <Label className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          App Icon
-                        </Label>
-
-                        {/* Default Icons */}
-                        <div className="grid grid-cols-4 gap-3">
-                          {DEFAULT_ICONS.map((icon) => (
-                            <button
-                              key={icon.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedIcon(icon.id)
-                                setUploadedIcon(null)
-                              }}
-                              className={`aspect-square rounded-2xl ${icon.color} flex items-center justify-center transition-all shadow-md ${
-                                selectedIcon === icon.id
-                                  ? "ring-4 ring-blue-600 ring-offset-2 ring-offset-slate-900 scale-105"
-                                  : "hover:scale-105 hover:shadow-lg"
-                              }`}
-                            >
-                              {icon.svg}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Upload Custom Icon */}
-                        <div className="relative">
-                          <input
-                            type="file"
-                            id="iconUpload"
-                            accept="image/*"
-                            onChange={handleIconUpload}
-                            className="hidden"
-                          />
-                          <Label
-                            htmlFor="iconUpload"
-                            className={`flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-                              isDarkMode
-                                ? "border-slate-700 hover:border-blue-600 hover:bg-slate-800 text-slate-300"
-                                : "border-slate-300 hover:border-blue-600 hover:bg-blue-50 text-slate-700"
-                            }`}
-                          >
-                            <Upload className="w-4 h-4" />
-                            <span className="text-sm font-medium">Upload Custom Icon</span>
-                          </Label>
-                        </div>
-
-                        {uploadedIcon && (
-                          <div
-                            className={`flex items-center gap-2 p-2 rounded-lg border ${
-                              isDarkMode ? "bg-blue-950 border-blue-800" : "bg-blue-50 border-blue-200"
-                            }`}
-                          >
-                            <img
-                              src={uploadedIcon || "/placeholder.svg"}
-                              alt="Preview"
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                            <span className={`text-sm font-medium ${isDarkMode ? "text-blue-300" : "text-blue-900"}`}>
-                              Custom icon selected
-                            </span>
-                          </div>
-                        )}
                       </div>
 
                       {/* Submit Button */}
                       <Button
                         type="submit"
                         className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-6 rounded-xl text-base font-semibold shadow-lg transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!url || !appName || !hostName || (!selectedIcon && !uploadedIcon)}
+                        disabled={!url || !appName || !hostName}
                       >
                         <Github className="w-5 h-5 mr-2" />
-                        Build with GitHub Actions
+                        Build APK with GitHub Actions
                       </Button>
                     </form>
                   ) : (
@@ -659,14 +503,16 @@ export default function APKBuilder() {
                         </p>
                       </div>
 
-                      {/* App Icon Display */}
+                      {/* App Info */}
                       <div className="flex flex-col items-center gap-3 mb-12">
                         <div
                           className={`w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border-2 ${
                             isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
                           }`}
                         >
-                          {getIconDisplay()}
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">{appName.charAt(0)}</span>
+                          </div>
                         </div>
                         <p
                           className={`text-sm font-semibold max-w-[80px] text-center leading-tight ${
