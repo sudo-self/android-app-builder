@@ -273,10 +273,10 @@ export default function APKBuilder() {
 
   const downloadAPK = async () => {
     if (artifactUrl) {
-      // Redirect to GitHub Actions artifact download
+
       window.open(artifactUrl, '_blank')
     } else if (githubRunId) {
-      // Fallback: open GitHub Actions page
+
       window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
     }
   }
@@ -289,7 +289,7 @@ export default function APKBuilder() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      // Fallback for older browsers
+
       const textArea = document.createElement('textarea')
       textArea.value = keyInfo
       document.body.appendChild(textArea)
@@ -325,7 +325,7 @@ export default function APKBuilder() {
 
           {/* Phone Screen */}
           <div
-            className={`absolute inset-2 rounded-[2.2rem] overflow-hidden transition-colors ${
+            className={`absolute inset-2 rounded-[2.6rem] overflow-hidden transition-colors ${
               isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
             }`}
           >
@@ -341,7 +341,7 @@ export default function APKBuilder() {
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">Android</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">apk.JesseJesse.com</p>
               </div>
             ) : (
               <>
@@ -380,7 +380,7 @@ export default function APKBuilder() {
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">terminal</span>
+                        <span className="ml-2">apk.jessejesse.com</span>
                       </div>
 
                       {/* Terminal Logs */}
