@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key } from "lucide-react"
 
 // GitHub Actions Configuration
 const GITHUB_OWNER = 'sudo-self'
@@ -26,6 +26,8 @@ export default function APKBuilder() {
   const [githubRunId, setGithubRunId] = useState<string | null>(null)
   const [artifactUrl, setArtifactUrl] = useState<string | null>(null)
   const [buildStartTime, setBuildStartTime] = useState<number>(0)
+  const [showAppKey, setShowAppKey] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // Extract hostname from URL when URL changes
   useEffect(() => {
@@ -146,16 +148,16 @@ export default function APKBuilder() {
 
   const simulateTerminalOutput = async () => {
     const steps = [
-      "🚀 Starting APK build process...",
-      "📋 Validating website configuration...",
-      "⚙️ Setting up Android project structure...",
-      "🌐 Configuring Trusted Web Activity...",
-      "📱 Building application manifest...",
-      "🔨 Compiling resources and assets...",
-      "📦 Packaging APK file...",
-      "🔐 Signing application with release key...",
-      "✅ Build process completed successfully!",
-      "⏳ Uploading artifact to GitHub..."
+      "Starting APK build process...",
+      "Validating website configuration...",
+      "Setting up Android project structure...",
+      "Configuring Trusted Web Activity...",
+      "Building application manifest...",
+      "Compiling resources and assets...",
+      "Packaging APK file...",
+      "Signing application with release key...",
+      "Build process completed successfully!",
+      "Creating Download link..."
     ]
 
     for (const message of steps) {
@@ -219,6 +221,7 @@ export default function APKBuilder() {
       setGithubRunId(null)
       setArtifactUrl(null)
       setBuildStartTime(Date.now())
+      setShowAppKey(false)
 
       try {
         // Start terminal simulation
@@ -278,6 +281,26 @@ export default function APKBuilder() {
     }
   }
 
+  const copyAppKey = async () => {
+    const keyInfo = `Alias: android\nPassword: 123321\n\nYou will need this key to publish changes to your app.`
+    
+    try {
+      await navigator.clipboard.writeText(keyInfo)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = keyInfo
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   const resetForm = () => {
     setIsComplete(false)
     setUrl("")
@@ -288,6 +311,8 @@ export default function APKBuilder() {
     setGithubRunId(null)
     setArtifactUrl(null)
     setBuildStartTime(0)
+    setShowAppKey(false)
+    setCopied(false)
   }
 
   return (
@@ -363,7 +388,7 @@ export default function APKBuilder() {
                           </div>
                         ))}
                         
-                        {/* Spinner for current operation */}
+                 
                         <div className="flex items-center gap-2 text-green-400 text-sm">
                           <span className="text-green-600">$</span>
                           <div className="flex gap-1">
@@ -375,14 +400,14 @@ export default function APKBuilder() {
                         </div>
 
                         {githubRunId && (
-                          <div className="text-blue-400 text-xs mt-4 pt-2 border-t border-slate-700">
+                          <div className="text-gray-400 text-xs mt-4 pt-2 border-t border-slate-700">
                             <a 
                               href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="underline hover:no-underline"
+                              className="underline hover:no-underline hover:pink-500"
                             >
-                              ↗ View live progress on GitHub Actions
+                              ↗ source code on GitHub
                             </a>
                           </div>
                         )}
@@ -395,10 +420,10 @@ export default function APKBuilder() {
                           <Github className="w-8 h-8 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          APK Builder
+                          Android App Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Convert any website to Android APK
+                          Create a working Android app in minutes
                         </p>
                       </div>
 
@@ -473,7 +498,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          The domain your app will open (auto-filled from URL)
+                         (New Builds can take 2-5 mins)
                         </p>
                       </div>
 
@@ -484,12 +509,12 @@ export default function APKBuilder() {
                         disabled={!url || !appName || !hostName}
                       >
                         <Github className="w-5 h-5 mr-2" />
-                        Build APK with GitHub Actions
+                        Build App
                       </Button>
                     </form>
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full animate-in fade-in zoom-in duration-500">
-                      <div className="text-center mb-12">
+                      <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 rounded-full mb-4 animate-in zoom-in duration-300">
                           <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -499,12 +524,12 @@ export default function APKBuilder() {
                           Build Complete!
                         </h2>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Your APK is ready for download
+                          Your Android App is ready for download
                         </p>
                       </div>
 
                       {/* App Info */}
-                      <div className="flex flex-col items-center gap-3 mb-12">
+                      <div className="flex flex-col items-center gap-3 mb-8">
                         <div
                           className={`w-20 h-20 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border-2 ${
                             isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
@@ -532,18 +557,52 @@ export default function APKBuilder() {
                       </Button>
 
                       {githubRunId && (
-                        <Button
-                          onClick={() => window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')}
-                          variant="outline"
-                          className={`w-full mb-4 transition-all ${
-                            isDarkMode
-                              ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
-                              : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
-                          }`}
-                        >
-                          <Github className="w-5 h-5 mr-2" />
-                          View on GitHub
-                        </Button>
+                        <>
+                          <Button
+                            onClick={() => setShowAppKey(!showAppKey)}
+                            variant="outline"
+                            className={`w-full mb-4 transition-all ${
+                              isDarkMode
+                                ? "bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+                                : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
+                            }`}
+                          >
+                            <Key className="w-5 h-5 mr-2" />
+                            {showAppKey ? "Hide App Key" : "View App Key"}
+                          </Button>
+
+                          {showAppKey && (
+                            <div className={`w-full p-4 rounded-lg mb-4 border ${
+                              isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-300"
+                            }`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <h3 className={`font-semibold ${isDarkMode ? "text-white" : "text-slate-900"}`}>
+                                  App Signing Key
+                                </h3>
+                                <Button
+                                  onClick={copyAppKey}
+                                  size="sm"
+                                  variant="ghost"
+                                  className={`h-8 px-2 ${
+                                    isDarkMode 
+                                      ? "text-slate-300 hover:bg-slate-700" 
+                                      : "text-slate-600 hover:bg-slate-200"
+                                  }`}
+                                >
+                                  <Copy className="w-4 h-4 mr-1" />
+                                  {copied ? "Copied!" : "Copy"}
+                                </Button>
+                              </div>
+                              <div className={`font-mono text-sm space-y-1 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                                <div>Alias: <span className="font-bold">android</span></div>
+                                <div>Password: <span className="font-bold">123321</span></div>
+                              </div>
+                              <p className={`text-xs mt-3 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                                You will need this key to publish changes to your app.
+                              </p>
+                            </div>
+                          )}
+                        </>
                       )}
 
                       <Button
