@@ -247,7 +247,7 @@ export default function APKBuilder() {
 
         const buildData = {
           buildId,
-          hostName: hostName.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+          hostName: url.replace(/^https?:\/\//, '').replace(/\/$/, ''),
           launchUrl: '/',
           name: appName,
           launcherName: appName,
@@ -515,7 +515,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                        lower quality connections may take 2-3 mins
+                        slower connections builds may take 2-3 mins
                         </p>
                       </div>
 
@@ -636,7 +636,7 @@ export default function APKBuilder() {
                   )}
                 </div>
 
-               <div className={`h-8 flex items-center justify-center border-t ${
+                <div className={`h-8 flex items-center justify-center border-t ${
                   isDarkMode 
                     ? "bg-slate-900 border-slate-800" 
                     : "bg-slate-100 border-slate-300"
