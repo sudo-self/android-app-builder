@@ -600,7 +600,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                        Python . Bubblewrap . GitHub . Next.js
+                        Python . Bubblewrap . GitHub Actions . Next.js
                         </p>
                       </div>
 
