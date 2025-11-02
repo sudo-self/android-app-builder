@@ -484,7 +484,7 @@ export default function APKBuilder() {
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">Github Actions</span>
+                        <span className="ml-2">GitHub Actions</span>
                       </div>
 
                       <div className="space-y-2">
@@ -502,7 +502,7 @@ export default function APKBuilder() {
                               <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
                               <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
                             </div>
-                            <span>Building APK...</span>
+                            <span>building apk</span>
                           </div>
                         )}
 
@@ -539,7 +539,7 @@ export default function APKBuilder() {
                           <Github className="w-8 h-8 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          Github Action APKs
+                          GitHub Action APKs
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                         apk.JesseJesse.com
