@@ -26,7 +26,6 @@ interface BuildStatus {
   artifactUrl?: string
 }
 
-// Icon URLs from your domain
 const ICON_CHOICES = [
   {
     value: "phone",
@@ -193,7 +192,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
     
     if (runData.status === 'completed') {
       if (runData.conclusion === 'success') {
-        // Fetch artifacts for this run
+       
         const artifactsResponse = await fetch(
           `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
           {
@@ -207,7 +206,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
         if (artifactsResponse.ok) {
           const artifactsData = await artifactsResponse.json();
           if (artifactsData.artifacts && artifactsData.artifacts.length > 0) {
-            // Get the download URL for the first artifact
+           
             const artifactDownloadUrl = artifactsData.artifacts[0].archive_download_url;
             return { 
               status: 'success', 
@@ -509,7 +508,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">building apk...</span>
+                        <span className="ml-2">Command Line</span>
                       </div>
 
                       <div className="space-y-2">
@@ -527,7 +526,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                               <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></div>
                               <div className="w-1 h-3 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
                             </div>
-                            <span>building apk</span>
+                            <span>Andr</span>
                           </div>
                         )}
 
@@ -544,14 +543,14 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                         )}
 
                         {githubRunId && (
-                          <div className="text-gray-400 text-xs mt-4 pt-2 border-t border-slate-700">
+                          <div className="text-gray-400 text-xs text-center mt-4 pt-2 border-t border-slate-700">
                             <a 
                               href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="underline hover:no-underline hover:text-blue-400"
                             >
-                              View live build on GitHub
+                              View live build
                             </a>
                           </div>
                         )}
@@ -564,10 +563,10 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                           <Github className="w-8 h-8 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          GitHub Action APKs
+                          Action APKs
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          apk.JesseJesse.com
+                          apk.jessejesse.com
                         </p>
                       </div>
 
@@ -612,7 +611,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
 
                       <div className="space-y-2">
                         <Label htmlFor="hostName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          builds may take 2-3 mins
+                          Average Build 1 min
                         </Label>
                         <Input
                           id="hostName"
@@ -627,7 +626,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                        Python . Bubblewrap . GitHub Actions . Next.js
+                        Python 3.11 . Gradle 8.1 . JDK 20
                         </p>
                       </div>
 
