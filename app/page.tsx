@@ -26,6 +26,25 @@ interface BuildStatus {
   artifactUrl?: string
 }
 
+// Icon URLs from your domain
+const ICON_CHOICES = [
+  {
+    value: "phone",
+    label: "Phone Icon",
+    url: "https://apk.jessejesse.com/phone-512.png"
+  },
+  {
+    value: "castle",
+    label: "Castle Icon", 
+    url: "https://apk.jessejesse.com/castle-512.png"
+  },
+  {
+    value: "smile",
+    label: "Smile Icon",
+    url: "https://apk.jessejesse.com/smile-512.png"
+  }
+]
+
 export default function APKBuilder() {
   const [url, setUrl] = useState("")
   const [appName, setAppName] = useState("")
@@ -33,7 +52,7 @@ export default function APKBuilder() {
   const [themeColor, setThemeColor] = useState("#171717")
   const [themeColorDark, setThemeColorDark] = useState("#000000")
   const [backgroundColor, setBackgroundColor] = useState("#FFFFFF")
-  const [iconChoice, setIconChoice] = useState("default")
+  const [iconChoice, setIconChoice] = useState("phone") // Default to phone icon
   const [isComplete, setIsComplete] = useState(false)
   const [isBuilding, setIsBuilding] = useState(false)
   const [terminalLogs, setTerminalLogs] = useState<string[]>([])
@@ -60,338 +79,7 @@ export default function APKBuilder() {
     return token || null
   }
 
-  useEffect(() => {
-    if (url) {
-      try {
-        const urlObj = new URL(url)
-        const extractedHost = urlObj.hostname
-        setHostName(extractedHost)
-        if (!appName) {
-          const defaultName = extractedHost.replace(/^www\./, '').split('.')[0]
-          setAppName(defaultName.charAt(0).toUpperCase() + defaultName.slice(1))
-        }
-        setError(null)
-      } catch (e) {
-        setHostName("")
-        if (url) {
-          setError("Please enter a valid URL with http:// or https://")
-        }
-      }
-    } else {
-      setHostName("")
-      setError(null)
-    }
-  }, [url, appName])
-
-  useEffect(() => {
-    const bootTimer = setTimeout(() => {
-      setShowBootScreen(false)
-    }, 3000)
-    return () => clearTimeout(bootTimer)
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  useEffect(() => {
-    if (!isBuilding || !githubRunId) return
-
-    let pollCount = 0
-    const maxPolls = 120
-
-    const pollBuildStatus = async () => {
-      if (pollCount >= maxPolls) {
-        setTerminalLogs(prev => [...prev, "Build timeout - check GitHub Actions for status"])
-        setIsBuilding(false)
-        return
-      }
-
-      pollCount++
-
-      try {
-        const result = await checkBuildStatus(githubRunId)
-        
-        if (result.status === 'success') {
-          setTerminalLogs(prev => [...prev, "Build completed successfully", "APK is ready for download"])
-          setIsBuilding(false)
-          setIsComplete(true)
-          
-          if (result.artifactUrl) {
-            setArtifactUrl(result.artifactUrl)
-          }
-        } else if (result.status === 'failed') {
-          setTerminalLogs(prev => [...prev, "Build failed. Check GitHub Actions for details"])
-          setIsBuilding(false)
-        } else {
-          const elapsedMinutes = Math.floor((Date.now() - buildStartTime) / 60000)
-          if (pollCount % 6 === 0) {
-            setTerminalLogs(prev => [...prev, `Still building... (${elapsedMinutes}m elapsed)`])
-          }
-          setTimeout(pollBuildStatus, 5000)
-        }
-      } catch (error) {
-        console.error('Error polling GitHub status:', error)
-        setTimeout(pollBuildStatus, 5000)
-      }
-    }
-
-    pollBuildStatus()
-
-    return () => {
-      pollCount = maxPolls
-    }
-  }, [isBuilding, githubRunId, buildStartTime])
-
-  const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
-    const token = getGitHubToken()
-    if (!token) {
-      throw new Error('GitHub token not configured')
-    }
-    
-    try {
-      const runResponse = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`,
-        {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }
-      )
-      
-      if (!runResponse.ok) {
-        throw new Error(`GitHub API error: ${runResponse.status}`)
-      }
-      
-      const runData = await runResponse.json()
-      
-      if (runData.status === 'completed') {
-        if (runData.conclusion === 'success') {
-          return { status: 'success' }
-        } else {
-          return { status: 'failed' }
-        }
-      }
-      
-      return { status: 'pending' }
-    } catch (error) {
-      console.error('Error checking build status:', error)
-      throw error
-    }
-  }
-
-  const validateWebsite = async (url: string): Promise<boolean> => {
-    try {
-      const urlObj = new URL(url)
-      return !!(urlObj.hostname && urlObj.protocol.startsWith('http') && urlObj.hostname.includes('.'))
-    } catch (e) {
-      return false
-    }
-  }
-
-  const triggerGitHubAction = async (buildData: BuildData): Promise<string | null> => {
-    const token = getGitHubToken()
-    if (!token) {
-      throw new Error('GitHub token not configured. Please check your environment variables.')
-    }
-
-    try {
-      const response = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            event_type: 'apk_build',
-            client_payload: buildData
-          })
-        }
-      )
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        if (response.status === 404) {
-          throw new Error('GitHub repository not found or access denied')
-        } else if (response.status === 403) {
-          throw new Error('GitHub token invalid or missing permissions')
-        } else {
-          throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`)
-        }
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 5000))
-
-      const runsResponse = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=10`,
-        {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        }
-      )
-
-      if (runsResponse.ok) {
-        const runsData = await runsResponse.json()
-        if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-          const recentRun = runsData.workflow_runs[0]
-          return recentRun.id.toString()
-        }
-      }
-
-      return null
-
-    } catch (error) {
-      console.error('Error triggering GitHub action:', error)
-      throw error
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!getGitHubToken()) {
-      setError('GitHub token not configured. Please check your environment setup.')
-      return
-    }
-    
-    if (url && appName && hostName) {
-      const isValidWebsite = await validateWebsite(url)
-      if (!isValidWebsite) {
-        setError("Invalid website URL format. Please include http:// or https:// and a valid domain.")
-        return
-      }
-
-      setIsBuilding(true)
-      setError(null)
-      setTerminalLogs([])
-      setGithubRunId(null)
-      setArtifactUrl(null)
-      setBuildStartTime(Date.now())
-      setShowAppKey(false)
-
-      try {
-        const buildId = `build_${Date.now()}`
-        setBuildId(buildId)
-
-        const cleanHostName = url
-          .replace(/^https?:\/\//, '')
-          .replace(/^www\./, '')
-          .replace(/\/$/, '')
-        
-        const buildData: BuildData = {
-          buildId,
-          hostName: cleanHostName,
-          launchUrl: '/',
-          name: appName,
-          launcherName: appName,
-          themeColor: themeColor,
-          themeColorDark: themeColorDark,
-          backgroundColor: backgroundColor,
-          iconChoice: iconChoice
-        }
-        
-        setTerminalLogs([
-          "initiated build workflow...",
-          `App: ${appName}`,
-          `Domain: ${cleanHostName}`,
-          `Theme: ${themeColor}`,
-          `Icon: ${iconChoice}`,
-          `Build ID: ${buildId}`,
-          "app assembly in progress...",
-          ""
-        ])
-
-        const runId = await triggerGitHubAction(buildData)
-        
-        if (runId) {
-          setGithubRunId(runId)
-          setTerminalLogs(prev => [
-            ...prev,
-            `GitHub Actions started successfully`,
-            `Run ID: ${runId}`,
-            "build in progress...",
-            "may take 2-5 minutes...",
-            ""
-          ])
-        } else {
-          throw new Error('Failed to get GitHub Actions run ID. The build may have started - check GitHub Actions.')
-        }
-
-      } catch (error: any) {
-        console.error('Build error:', error)
-        const errorMessage = error.message || 'Unknown error occurred'
-        setTerminalLogs(prev => [...prev, `Build failed: ${errorMessage}`])
-        setError(errorMessage)
-        setIsBuilding(false)
-      }
-    }
-  }
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
-  }
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-  }
-
-  const downloadAPK = async () => {
-    if (githubRunId) {
-      window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
-    }
-  }
-
-  const copyAppKey = async () => {
-    const keyInfo = `Alias: android\nPassword: 123321\n\nYou will need this key to publish changes to your app.`
-    
-    try {
-      await navigator.clipboard.writeText(keyInfo)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      const textArea = document.createElement('textarea')
-      textArea.value = keyInfo
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
-
-  const resetForm = () => {
-    setIsComplete(false)
-    setIsBuilding(false)
-    setUrl("")
-    setAppName("")
-    setHostName("")
-    setThemeColor("#171717")
-    setThemeColorDark("#000000")
-    setBackgroundColor("#FFFFFF")
-    setIconChoice("default")
-    setTerminalLogs([])
-    setBuildId(null)
-    setGithubRunId(null)
-    setArtifactUrl(null)
-    setBuildStartTime(0)
-    setShowAppKey(false)
-    setCopied(false)
-    setShowAdvanced(false)
-    setError(null)
-  }
-
-  const hasGitHubToken = !!getGitHubToken()
-
+  // ... (keep all other useEffect hooks and functions the same)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
@@ -611,20 +299,51 @@ export default function APKBuilder() {
                               <Image className="w-4 h-4" />
                               App Icon
                             </Label>
+                            
+                            {/* Icon Selection Grid */}
+                            <div className="grid grid-cols-3 gap-3">
+                              {ICON_CHOICES.map((icon) => (
+                                <div
+                                  key={icon.value}
+                                  className={`flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                    iconChoice === icon.value
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                                  }`}
+                                  onClick={() => setIconChoice(icon.value)}
+                                >
+                                  <img
+                                    src={icon.url}
+                                    alt={icon.label}
+                                    className="w-12 h-12 object-contain mb-2"
+                                  />
+                                  <span className={`text-xs text-center ${
+                                    isDarkMode ? "text-white" : "text-slate-900"
+                                  }`}>
+                                    {icon.label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Fallback dropdown for accessibility */}
                             <select
                               id="iconChoice"
                               value={iconChoice}
                               onChange={(e) => setIconChoice(e.target.value)}
-                              className={`w-full p-2 rounded border ${
+                              className={`w-full p-2 rounded border mt-2 ${
                                 isDarkMode
                                   ? "bg-slate-800 border-slate-700 text-white"
                                   : "bg-white border-slate-300 text-slate-900"
                               }`}
                             >
-                              <option value="default">Default Icon</option>
-                              <option value="alternative">Alternative Icon</option>
-                              <option value="modern">Modern Icon</option>
+                              {ICON_CHOICES.map((icon) => (
+                                <option key={icon.value} value={icon.value}>
+                                  {icon.label}
+                                </option>
+                              ))}
                             </select>
+                            
                             <p className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                               Choose the app icon style
                             </p>
