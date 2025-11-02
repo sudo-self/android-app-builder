@@ -230,10 +230,9 @@ export default function APKBuilder() {
         }
       }
 
-      // Wait for workflow to start
       await new Promise(resolve => setTimeout(resolve, 5000))
 
-      // Find the workflow run
+     
       const runsResponse = await fetch(
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=10`,
         {
@@ -247,7 +246,7 @@ export default function APKBuilder() {
       if (runsResponse.ok) {
         const runsData = await runsResponse.json()
         if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-          // Get the most recent run
+          
           const recentRun = runsData.workflow_runs[0]
           return recentRun.id.toString()
         }
@@ -402,7 +401,7 @@ export default function APKBuilder() {
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84] overflow-hidden">
-          {/* Error displays */}
+     
           {error && !isBuilding && (
             <div className="absolute top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
               <div className="flex items-center gap-2">
@@ -438,7 +437,7 @@ export default function APKBuilder() {
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">Android</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">ANDROID</p>
               </div>
             ) : (
               <>
@@ -470,13 +469,13 @@ export default function APKBuilder() {
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">apk-builder</span>
+                        <span className="ml-2">apk.jessejesse.com</span>
                       </div>
 
                       <div className="space-y-2">
                         {terminalLogs.map((log, index) => (
                           <div key={index} className="text-green-400 text-sm animate-in fade-in slide-in-from-left-2">
-                            <span className="text-green-600 mr-2">$</span> {log}
+                            <span className="text-cyan-600 mr-2">$</span> {log}
                           </div>
                         ))}
                         
@@ -512,7 +511,7 @@ export default function APKBuilder() {
                               rel="noopener noreferrer"
                               className="underline hover:no-underline hover:text-blue-400"
                             >
-                              View live build on GitHub
+                              View build Workflow
                             </a>
                           </div>
                         )}
@@ -528,7 +527,7 @@ export default function APKBuilder() {
                           Android App Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Build Android apps in seconds
+                          build your Android app in seconds...
                         </p>
                       </div>
 
@@ -542,7 +541,7 @@ export default function APKBuilder() {
                         <Input
                           id="url"
                           type="url"
-                          placeholder="https://example.com"
+                          placeholder="https://YourApp.com"
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           className={isDarkMode
@@ -555,12 +554,12 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         <Label htmlFor="appName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          App Name
+                          Application Name
                         </Label>
                         <Input
                           id="appName"
                           type="text"
-                          placeholder="Enter app name"
+                          placeholder="your app name"
                           value={appName}
                           onChange={(e) => setAppName(e.target.value)}
                           className={isDarkMode
@@ -573,12 +572,12 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         <Label htmlFor="hostName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          Domain (auto-filled, editable)
+                          Domain (.com .net .info .org)
                         </Label>
                         <Input
                           id="hostName"
                           type="text"
-                          placeholder="example.com"
+                          placeholder="YourApp.com"
                           value={hostName}
                           onChange={(e) => setHostName(e.target.value)}
                           className={isDarkMode
@@ -588,7 +587,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                          This will be used as your app's domain
+                         build powered by GitHub Actions & Next.js
                         </p>
                       </div>
 
