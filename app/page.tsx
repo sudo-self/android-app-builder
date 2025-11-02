@@ -782,19 +782,7 @@ export default function APKBuilder() {
                       ? "bg-slate-900 border-slate-800"
                       : "bg-slate-100 border-slate-300"
                   } rounded-b-[2.5rem]`}
-                >
-                  <a
-                    href="https://github.com/sudo-self/apk-builder-actions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <img
-                      src="https://img.shields.io/badge/-sudo--self-lightgrey?style=plastic&logo=github"
-                      alt="sudo-self"
-                      className="h-4"
-                    />
-                  </a>
+                />
 
                   <a
                     href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
