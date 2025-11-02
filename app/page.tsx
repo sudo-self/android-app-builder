@@ -450,7 +450,7 @@ export default function APKBuilder() {
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">apk.JesseJesse.com</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">A N D R O I D</p>
               </div>
             ) : (
               <>
@@ -482,7 +482,7 @@ export default function APKBuilder() {
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2">GitHub Actions</span>
+                        <span className="ml-2">building apk...</span>
                       </div>
 
                       <div className="space-y-2">
@@ -600,7 +600,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                          Bubblewrap cli & GitHub actions
+                        Python . Bubblewrap . GitHub . Next.js
                         </p>
                       </div>
 
