@@ -452,7 +452,7 @@ export default function APKBuilder() {
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
                   <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
-                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">ANDROID</p>
+                <p className="text-[#3DDC84] text-sm font-medium animate-pulse">apk.JesseJesse.com</p>
               </div>
             ) : (
               <>
@@ -526,7 +526,7 @@ export default function APKBuilder() {
                               rel="noopener noreferrer"
                               className="underline hover:no-underline hover:text-blue-400"
                             >
-                              View live build status
+                              View live build on GitHub
                             </a>
                           </div>
                         )}
@@ -539,12 +539,12 @@ export default function APKBuilder() {
                           <Github className="w-8 h-8 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold mb-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          Github APK Builder 
+                          Github Action APKs
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
                         apk.JesseJesse.com
                         </p>
-                      </div>
+                      </div
 
                       <div className="space-y-2">
                         <Label htmlFor="url" className={`font-medium flex items-center gap-2 ${
@@ -587,7 +587,7 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         <Label htmlFor="hostName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                        Domain (autofilled)
+                        builds may take 2-3 mins
                         </Label>
                         <Input
                           id="hostName"
@@ -602,7 +602,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                         APK created with Gradle and GitHub Actions
+                         Bubblewrap cli & GitHub actions
                         </p>
                       </div>
 
@@ -657,7 +657,7 @@ export default function APKBuilder() {
                               ))}
                             </div>
 
-                            {/* Fallback dropdown for accessibility */}
+                      
                             <select
                               id="iconChoice"
                               value={iconChoice}
@@ -767,9 +767,9 @@ export default function APKBuilder() {
     href="https://apk.jessejesse.com/assetlinks.json"
     target="_blank"
     rel="noopener noreferrer"
-    className="underline"
+    className="underline hover:text-green-600"
   >
-    Deeplink assetlinks.json
+    assetlinks.json
   </a>
 </p>
 
