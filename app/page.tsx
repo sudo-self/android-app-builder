@@ -79,7 +79,6 @@ export default function APKBuilder() {
     return token || null
   }
 
-
   const hasGitHubToken = !!getGitHubToken()
 
   useEffect(() => {
@@ -416,7 +415,6 @@ export default function APKBuilder() {
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84] overflow-hidden">
-     
           {error && !isBuilding && (
             <div className="absolute top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
               <div className="flex items-center gap-2">
@@ -542,9 +540,9 @@ export default function APKBuilder() {
                           GitHub Action APKs
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                        apk.JesseJesse.com
+                          apk.JesseJesse.com
                         </p>
-                      </div
+                      </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="url" className={`font-medium flex items-center gap-2 ${
@@ -587,7 +585,7 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         <Label htmlFor="hostName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                        builds may take 2-3 mins
+                          builds may take 2-3 mins
                         </Label>
                         <Input
                           id="hostName"
@@ -602,7 +600,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                         Bubblewrap cli & GitHub actions
+                          Bubblewrap cli & GitHub actions
                         </p>
                       </div>
 
@@ -631,31 +629,29 @@ export default function APKBuilder() {
                               App Icon
                             </Label>
                             
-                         
-                           <div className="grid grid-cols-3 gap-3">
-  {ICON_CHOICES.map((icon) => (
-    <div
-      key={icon.value}
-      className={`flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
-        iconChoice === icon.value
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
-          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white'
-      }`}
-      onClick={() => setIconChoice(icon.value)}
-    >
-      <img
-        src={icon.url}
-        alt={icon.label}
-        className="w-12 h-12 object-contain mb-2"
-      />
-      <span className="text-xs text-center font-medium">
-        {icon.label}
-      </span>
-    </div>
-  ))}
-</div>
+                            <div className="grid grid-cols-3 gap-3">
+                              {ICON_CHOICES.map((icon) => (
+                                <div
+                                  key={icon.value}
+                                  className={`flex flex-col items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                    iconChoice === icon.value
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
+                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white'
+                                  }`}
+                                  onClick={() => setIconChoice(icon.value)}
+                                >
+                                  <img
+                                    src={icon.url}
+                                    alt={icon.label}
+                                    className="w-12 h-12 object-contain mb-2"
+                                  />
+                                  <span className="text-xs text-center font-medium">
+                                    {icon.label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
 
-                      
                             <select
                               id="iconChoice"
                               value={iconChoice}
@@ -758,19 +754,18 @@ export default function APKBuilder() {
                         </div>
                       )}
 
-                    <p
-  className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
->
-  <a
-    href="https://apk.jessejesse.com/assetlinks.json"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="underline hover:text-green-600"
-  >
-    assetlinks.json
-  </a>
-</p>
-
+                      <p
+                        className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
+                      >
+                        <a
+                          href="https://apk.jessejesse.com/assetlinks.json"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-green-600"
+                        >
+                          assetlinks.json
+                        </a>
+                      </p>
 
                       <Button
                         type="submit"
