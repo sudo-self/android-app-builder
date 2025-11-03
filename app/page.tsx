@@ -437,7 +437,15 @@ export default function APKBuilder() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-transparent overflow-hidden bg-gradient-to-r from-gray-500 via-purple-500 via-indigo-500 to-cyan-500 p-0.5">
+        <div 
+          className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-transparent overflow-hidden p-0.5"
+          style={{
+            backgroundImage: 'linear-gradient(black, black), linear-gradient(to bottom, #6b7280, #7e22ce, #3b82f6, #06b6d4)',
+            backgroundOrigin: 'border-box',
+            backgroundClip: 'content-box, border-box',
+            backgroundSize: '100% 100%'
+          }}
+        >
           {error && !isBuilding && (
             <div className="absolute top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
               <div className="flex items-center gap-2">
@@ -460,23 +468,23 @@ export default function APKBuilder() {
             isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
           }`}>     
             {showBootScreen ? (
-  <div className="h-full bg-black flex flex-col items-center justify-center rounded-[2.5rem]">
-    <div className="animate-in fade-in zoom-in duration-1000">
-      <img 
-        src="./droiddroid.svg" 
-        alt="Android Logo"
-        className="w-28 h-28 mb-8"
-      />
-    </div>
-    <div className="flex gap-2 mb-4">
-      <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.3s]" />
-      <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
-      <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce" />
-    </div>
-    <div className="flex items-center gap-2">
-      <p className="text-[#3DDC84] text-md font-medium animate-pulse">A N D R O I D</p>
-    </div>
-  </div>
+              <div className="h-full bg-black flex flex-col items-center justify-center rounded-[2.5rem]">
+                <div className="animate-in fade-in zoom-in duration-1000">
+                  <img 
+                    src="./droiddroid.svg" 
+                    alt="Android Logo"
+                    className="w-28 h-28 mb-8"
+                  />
+                </div>
+                <div className="flex gap-2 mb-4">
+                  <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[#3DDC84] text-md font-medium animate-pulse">A N D R O I D</p>
+                </div>
+              </div>
             ) : (
               <>
                 <div className={`h-12 flex items-center justify-between px-8 text-xs rounded-t-[2.5rem] ${
@@ -789,17 +797,17 @@ export default function APKBuilder() {
                       )}
 
                       <p
-  className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
->
-  <a
-    href="https://apk.jessejesse.com/buildinfo.json"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="underline hover:text-pink-500"
-  >
-    About the App
-  </a>
-</p>
+                        className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
+                      >
+                        <a
+                          href="https://apk.jessejesse.com/buildinfo.json"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:text-pink-500"
+                        >
+                          About the App
+                        </a>
+                      </p>
 
                       <Button
                         type="submit"
@@ -813,28 +821,26 @@ export default function APKBuilder() {
                   )}
                 </div>
 
-               
-
-<div
-  className={`h-8 flex items-center justify-center gap-2 border-t ${
-    isDarkMode
-      ? "bg-slate-900 border-slate-800"
-      : "bg-slate-100 border-slate-300"
-  } rounded-b-[2.5rem]`}
->
-  <a
-    href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="hover:opacity-80 transition-opacity"
-  >
-    <img
-      src="https://img.shields.io/github/actions/workflow/status/sudo-self/apk-builder-actions/apk-builder.yml?color=blue&style=plastic"
-      alt="APK Builder Workflow Status"
-      className="h-4"
-    />
-  </a>
-</div>
+                <div
+                  className={`h-8 flex items-center justify-center gap-2 border-t ${
+                    isDarkMode
+                      ? "bg-slate-900 border-slate-800"
+                      : "bg-slate-100 border-slate-300"
+                  } rounded-b-[2.5rem]`}
+                >
+                  <a
+                    href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <img
+                      src="https://img.shields.io/github/actions/workflow/status/sudo-self/apk-builder-actions/apk-builder.yml?color=blue&style=plastic"
+                      alt="APK Builder Workflow Status"
+                      className="h-4"
+                    />
+                  </a>
+                </div>
               </>
             )}
           </div>
