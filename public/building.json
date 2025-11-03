@@ -1,0 +1,43 @@
+{
+  "project": {
+    "name": "Actions APKs",
+    "version": "1.0.0",
+    "description": "A web-based APK builder that uses GitHub Actions to convert websites into Android apps",
+    "repository": "https://github.com/sudo-self/android-app-builder",
+    "website": "https://apk.jessejesse.com"
+  },
+  "technology": {
+    "frontend": "Next.js 15 app router",
+    "styling": "Tailwind CSS",
+    "backend": "GitHub Actions",
+    "apkBuilder": "Gradle 8.1",
+    "programmingLanguage": "Python customization"
+  },
+  "features": [
+    "Convert any website to Android APK",
+    "Custom app icons and themes",
+    "Automatic signing and alignment",
+    "GitHub Actions workflow integration"
+  ],
+  "workflow": {
+    "name": "APK Builder",
+    "file": ".github/workflows/apk-builder.yml",
+    "trigger": "repository_dispatch",
+    "artifacts": ["YourApp.apk"],
+    "runtime": "2-5 minutes"
+  },
+  "endpoints": {
+    "builder": "/",
+    "assetLinks": "/assetlinks.json",
+    "buildInfo": "/buildinfo.json"
+  },
+  "author": {
+    "name": "sudo-self",
+    "github": "sudo-self",
+    "website": "https://apk.jessejesse.com"
+  },
+  "build": {
+    "timestamp": "2024-12-19T00:00:00Z",
+    "environment": "production"
+  }
+}
