@@ -499,7 +499,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                       className="hover:opacity-70 transition-opacity"
                       aria-label="Toggle theme"
                     >
-                      {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
@@ -790,9 +790,9 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                           href="https://apk.jessejesse.com/buildinfo.json"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="underline hover:text-green-600"
+                          className="underline hover:text-pink-500"
                         >
-                          About the App
+                          About The App
                         </a>
                       </p>
 
@@ -802,7 +802,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                         disabled={!url || !appName || !hostName}
                       >
                         <Github className="w-5 h-5 mr-2" />
-                        Build App
+                        Build APK
                       </Button>
                     </form>
                   )}
