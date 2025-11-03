@@ -472,9 +472,9 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                   </svg>
                 </div>
                 <div className="flex gap-2 mb-4">
-                  <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-2 h-2 bg-[#3DDC84] rounded-full animate-bounce" />
+                  <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
               <div className="flex items-center gap-2">
   <p className="text-[#3DDC84] text-md font-medium animate-pulse">A N D R O I D</p>
@@ -491,7 +491,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                     <span className="opacity-80">{formatDate(currentTime)}</span>
                   </div>
                   <div className="flex gap-3 items-center text-[#3DDC84]">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24a11.5 11.5 0 0 0-8.94 0L5.65 5.67c-.19-.28-.54-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C4.8 11.16 3.5 13.84 3.5 16.5V19h17v-2.5c0-2.66-1.3-5.34-2.9-7.02zM7 17.25c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z" />
                     </svg>
                     <button
