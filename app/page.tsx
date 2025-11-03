@@ -825,6 +825,18 @@ export default function APKBuilder() {
   } rounded-b-[2.5rem]`}
 >
   <a
+    href="https://github.com/sudo-self/apk-builder-actions"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="hover:opacity-80 transition-opacity"
+  >
+    <img 
+      src="https://img.shields.io/badge/-APK%20Builder-blue?style=plastic&logo=github" 
+      alt="APK Builder" 
+      className="h-4"
+    />
+  </a>
+  <a
     href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
     target="_blank"
     rel="noopener noreferrer"
@@ -835,7 +847,7 @@ export default function APKBuilder() {
       alt="APK Builder Workflow Status"
       className="h-4"
     />
-  </a><br />
+  </a>
 </div>
               </>
             )}
