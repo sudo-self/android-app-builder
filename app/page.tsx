@@ -582,7 +582,7 @@ export default function APKBuilder() {
                           APK Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Create stable Android APKs no-coding required
+                          Create Android APKs no-coding required
                         </p>
                       </div>
 
