@@ -687,7 +687,6 @@ export default function APKBuilder() {
                         <Label htmlFor="url" className={`font-medium flex items-center gap-2 ${
                           isDarkMode ? "text-white" : "text-slate-900"
                         }`}>
-                          <Globe className="w-5 h-5" />
                           Website
                         </Label>
                         <Input
