@@ -659,7 +659,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs text-center ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                          apk build time average is 1-3 minutes
+                          apk build time approx 1-3 mins
                         </p>
                       </div>
 
