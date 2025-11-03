@@ -437,7 +437,7 @@ export default function APKBuilder() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-transparent overflow-hidden bg-gradient-to-r from-gray-500 via-indigo-500 to-cyan-500 p-0.5">
+        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-transparent overflow-hidden bg-gradient-to-r from-gray-500 via-purple-500 via-indigo-500 to-cyan-500 p-0.5">
           {error && !isBuilding && (
             <div className="absolute top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
               <div className="flex items-center gap-2">
