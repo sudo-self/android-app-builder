@@ -344,13 +344,13 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
         }
         
         setTerminalLogs([
-          "initiated build workflow...",
-          `App: ${appName}`,
-          `Domain: ${cleanHostName}`,
-          `Theme: ${themeColor}`,
-          `Icon: ${iconChoice}`,
-          `Build ID: ${buildId}`,
-          "app assembly in progress...",
+          "building apk...",
+          `${appName}`,
+          `${cleanHostName}`,
+          `${themeColor}`,
+          `${iconChoice}`,
+          `ID: ${buildId}`,
+          "in progress...",
           ""
         ])
 
@@ -792,7 +792,7 @@ const checkBuildStatus = async (runId: string): Promise<BuildStatus> => {
                           rel="noopener noreferrer"
                           className="underline hover:text-green-600"
                         >
-                          Build Info
+                          About the App
                         </a>
                       </p>
 
