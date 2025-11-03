@@ -573,7 +573,7 @@ export default function APKBuilder() {
                           Action APKs
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          apk.jessejesse.com
+                          apk.JesseJesse.com
                         </p>
                       </div>
 
@@ -600,7 +600,7 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         <Label htmlFor="appName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          App Name
+                          Name
                         </Label>
                         <Input
                           id="appName"
@@ -618,7 +618,7 @@ export default function APKBuilder() {
 
                       <div className="space-y-2">
                         <Label htmlFor="hostName" className={`font-medium ${isDarkMode ? "text-white" : "text-slate-900"}`}>
-                          Average Build Time 75 Seconds
+                         Domain
                         </Label>
                         <Input
                           id="hostName"
