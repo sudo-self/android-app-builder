@@ -582,7 +582,7 @@ export default function APKBuilder() {
                           APK Builder
                         </h1>
                         <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          instantly create custom Android apps no-coding required.
+                          create custom Android applications no-coding required
                         </p>
                       </div>
 
