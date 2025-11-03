@@ -456,8 +456,6 @@ export default function APKBuilder() {
             </div>
           )}
 
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-black rounded-b-3xl z-10" />
-
           <div className={`absolute inset-[6px] rounded-[2.5rem] overflow-hidden transition-colors ${
             isDarkMode ? "bg-black" : "bg-gradient-to-b from-slate-50 to-slate-100"
           }`}>     
