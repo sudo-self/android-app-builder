@@ -817,12 +817,12 @@ export default function APKBuilder() {
                         className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
                       >
                         <a
-                          href="https://apk.jessejesse.com/workflow.png"
+                          href="https://github.com/sudo-self/apk-builder-actions"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="underline hover:text-pink-500"
                         >
-                          github actions yml
+                          Apk Builder Source Code
                         </a>
                       </p>
 
