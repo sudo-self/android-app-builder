@@ -437,7 +437,7 @@ export default function APKBuilder() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-[#3DDC84] overflow-hidden">
+        <div className="relative mx-auto w-[340px] h-[680px] bg-black rounded-[3rem] shadow-2xl border-8 border-transparent overflow-hidden bg-gradient-to-r from-gray-500 via-indigo-500 to-cyan-500 p-0.5">
           {error && !isBuilding && (
             <div className="absolute top-4 left-4 right-4 bg-red-500 text-white p-3 rounded-lg z-20 animate-in fade-in">
               <div className="flex items-center gap-2">
@@ -636,7 +636,7 @@ export default function APKBuilder() {
                           required
                         />
                         <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
-                          Python  Linux  Gradle  Next.js
+                          app build time average 1-3 minutes
                         </p>
                       </div>
 
@@ -800,7 +800,7 @@ export default function APKBuilder() {
                           className="underline hover:text-pink-500"
                         >
                           About the App
-                        </a>
+                        </a
                       </p>
 
                       <Button
@@ -824,18 +824,6 @@ export default function APKBuilder() {
       : "bg-slate-100 border-slate-300"
   } rounded-b-[2.5rem]`}
 >
-  <a
-    href="https://github.com/sudo-self/apk-builder-actions"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="hover:opacity-80 transition-opacity"
-  >
-    <img 
-      src="https://img.shields.io/badge/-APK%20Builder-blue?style=plastic&logo=github" 
-      alt="APK Builder" 
-      className="h-4"
-    />
-  </a>
   <a
     href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
     target="_blank"
