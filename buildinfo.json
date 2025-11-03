@@ -1,6 +1,6 @@
 {
   "project": {
-    "name": "Actions APKs",
+    "name": "Action APKs",
     "version": "1.0.0",
     "description": "A web-based APK builder that uses GitHub Actions to convert websites into Android apps",
     "repository": "https://github.com/sudo-self/android-app-builder",
