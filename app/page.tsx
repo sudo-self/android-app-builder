@@ -528,7 +528,7 @@ export default function APKBuilder() {
                   <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[#3DDC84] text-md font-medium animate-pulse">A N D R O I D</p>
+                  <p className="text-[#3DDC84] text-md font-medium animate-pulse">A P K  B U I L D E R</p>
                 </div>
               </div>
             ) : (
@@ -679,7 +679,7 @@ export default function APKBuilder() {
                           {hostName || "yourapp.com"}
                         </p>
                         <p className={`text-xs mt-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          live preview
+                          Transform URLs and content into native Android applications
                         </p>
                       </div>
 
@@ -687,7 +687,7 @@ export default function APKBuilder() {
                         <Label htmlFor="url" className={`font-medium flex items-center gap-2 ${
                           isDarkMode ? "text-white" : "text-slate-900"
                         }`}>
-                          Website
+                         Web Address
                         </Label>
                         <Input
                           id="url"
