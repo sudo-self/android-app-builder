@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2 } from "lucide-react"
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
@@ -26,6 +26,7 @@ interface BuildStatus {
   status: 'pending' | 'success' | 'failed' | 'unknown'
   artifactUrl?: string
   artifactId?: string
+  artifactName?: string
 }
 
 const ICON_CHOICES = [
@@ -64,11 +65,13 @@ export default function APKBuilder() {
   const [githubRunId, setGithubRunId] = useState<string | null>(null)
   const [artifactUrl, setArtifactUrl] = useState<string | null>(null)
   const [artifactId, setArtifactId] = useState<string | null>(null)
+  const [artifactName, setArtifactName] = useState<string | null>(null)
   const [buildStartTime, setBuildStartTime] = useState<number>(0)
   const [showAppKey, setShowAppKey] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'success' | 'error'>('idle')
 
   // Get selected icon URL
   const selectedIcon = ICON_CHOICES.find(icon => icon.value === iconChoice) || ICON_CHOICES[0]
@@ -142,7 +145,7 @@ export default function APKBuilder() {
         const result = await checkBuildStatus(githubRunId)
         
         if (result.status === 'success') {
-          setTerminalLogs(prev => [...prev, "Build completed", "APK is ready"])
+          setTerminalLogs(prev => [...prev, "✓ Build completed", "✓ APK is ready"])
           setIsBuilding(false)
           setIsComplete(true)
           
@@ -152,8 +155,11 @@ export default function APKBuilder() {
           if (result.artifactId) {
             setArtifactId(result.artifactId)
           }
+          if (result.artifactName) {
+            setArtifactName(result.artifactName)
+          }
         } else if (result.status === 'failed') {
-          setTerminalLogs(prev => [...prev, "Build failed. Check GitHub Actions for details"])
+          setTerminalLogs(prev => [...prev, "✗ Build failed. Check GitHub Actions for details"])
           setIsBuilding(false)
         } else {
           const elapsedMinutes = Math.floor((Date.now() - buildStartTime) / 60000)
@@ -218,7 +224,8 @@ export default function APKBuilder() {
               return { 
                 status: 'success', 
                 artifactUrl: artifactDownloadUrl,
-                artifactId: artifact.id.toString()
+                artifactId: artifact.id.toString(),
+                artifactName: artifact.name
               }
             }
           }
@@ -330,6 +337,7 @@ export default function APKBuilder() {
       setArtifactId(null)
       setBuildStartTime(Date.now())
       setShowAppKey(false)
+      setDownloadStatus('idle')
 
       try {
         const buildId = `build_${Date.now()}`
@@ -399,40 +407,66 @@ export default function APKBuilder() {
 
   const downloadAPK = async () => {
     try {
+      setDownloadStatus('downloading')
+      
       if (artifactId) {
-    
         const token = getGitHubToken()
         if (!token) {
           setError('GitHub token required for download')
+          setDownloadStatus('error')
           return
         }
 
-     
+        // Create a direct download link
         const downloadUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/artifacts/${artifactId}/zip`
         
-     
-        const iframe = document.createElement('iframe')
-        iframe.style.display = 'none'
-        iframe.src = downloadUrl
-        document.body.appendChild(iframe)
+        // Create a temporary anchor element to trigger download
+        const a = document.createElement('a')
+        a.href = downloadUrl
+        a.download = artifactName || `${appName}_app.zip`
+        a.style.display = 'none'
         
-     
-        setTimeout(() => {
-          document.body.removeChild(iframe)
-        }, 5000)
+        // Add authorization header through fetch and blob approach
+        try {
+          const response = await fetch(downloadUrl, {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          })
+          
+          if (response.ok) {
+            const blob = await response.blob()
+            const blobUrl = URL.createObjectURL(blob)
+            a.href = blobUrl
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(blobUrl)
+            setDownloadStatus('success')
+            
+            // Reset success status after 3 seconds
+            setTimeout(() => setDownloadStatus('idle'), 3000)
+          } else {
+            throw new Error(`Download failed: ${response.status}`)
+          }
+        } catch (fetchError) {
+          // Fallback: open in new tab for manual download
+          window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
+          setDownloadStatus('idle')
+        }
         
       } else if (githubRunId) {
-     
+        // Fallback: open GitHub actions page
         window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
-      } else if (artifactUrl) {
-     
-        window.open(artifactUrl, '_blank')
+        setDownloadStatus('idle')
       }
     } catch (error: any) {
       console.error('Download error:', error)
       setError(`Download failed: ${error.message}`)
+      setDownloadStatus('error')
       
-   
+      // Fallback to GitHub actions page
       if (githubRunId) {
         window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
       }
@@ -478,6 +512,7 @@ export default function APKBuilder() {
     setCopied(false)
     setShowAdvanced(false)
     setError(null)
+    setDownloadStatus('idle')
   }
 
   return (
@@ -533,43 +568,35 @@ export default function APKBuilder() {
               </div>
             ) : (
               <>
-               <div
-  className={`h-12 flex items-center justify-between px-8 text-xs rounded-t-[2.5rem] ${
-    isDarkMode ? "bg-slate-950 text-white" : "bg-slate-900 text-white"
-  }`}
->
-
-  <div className="flex items-center gap-3 text-[#3DDC84]">
-    <span className="font-semibold">{formatTime(currentTime)}</span>
-    <span className="opacity-80">{formatDate(currentTime)}</span>
-  </div>
-
-
-  <div className="flex gap-4 items-center text-[#3DDC84]">
-
-
-    <a
-      href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="hover:opacity-80 transition-opacity"
-    >
-      <img
-        src="https://img.shields.io/github/actions/workflow/status/sudo-self/apk-builder-actions/apk-builder.yml?color=blue&style=plastic"
-        alt="APK Builder Workflow Status"
-        className="h-4"
-      />
-    </a>
-
-    <button
-      onClick={() => setIsDarkMode(!isDarkMode)}
-      className="hover:opacity-70 transition-opacity"
-      aria-label="Toggle theme"
-    >
-      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-    </button>
-  </div>
-</div>
+                <div className={`h-12 flex items-center justify-between px-8 text-xs rounded-t-[2.5rem] ${
+                  isDarkMode ? "bg-slate-950 text-white" : "bg-slate-900 text-white"
+                }`}>
+                  <div className="flex items-center gap-3 text-[#3DDC84]">
+                    <span className="font-semibold">{formatTime(currentTime)}</span>
+                    <span className="opacity-80">{formatDate(currentTime)}</span>
+                  </div>
+                  <div className="flex gap-4 items-center text-[#3DDC84]">
+                    <a
+                      href="https://github.com/sudo-self/apk-builder-actions/actions/workflows/apk-builder.yml"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:opacity-80 transition-opacity"
+                    >
+                      <img
+                        src="https://img.shields.io/github/actions/workflow/status/sudo-self/apk-builder-actions/apk-builder.yml?color=blue&style=plastic"
+                        alt="APK Builder Workflow Status"
+                        className="h-4"
+                      />
+                    </a>
+                    <button
+                      onClick={() => setIsDarkMode(!isDarkMode)}
+                      className="hover:opacity-70 transition-opacity"
+                      aria-label="Toggle theme"
+                    >
+                      {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
 
                 <div className="h-[calc(100%-3rem-24px)] overflow-y-auto p-6">
                   {isBuilding || isComplete ? (
@@ -602,33 +629,72 @@ export default function APKBuilder() {
 
                         {isComplete && (
                           <div className="mt-4 pt-4 border-t border-slate-700 space-y-3">
-                            <Button
-                              onClick={downloadAPK}
-                              className="w-full bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Download APK
-                            </Button>
-                            
-                            {githubRunId && (
+                            {/* Success Message */}
+                            <div className="text-center mb-4">
+                              <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                              <h3 className="text-green-400 font-semibold">APK Ready!</h3>
+                              <p className="text-gray-400 text-sm mt-1">
+                                Your Android app has been built successfully
+                              </p>
+                            </div>
+
+                            {/* Download Button with Status */}
+                            <div className="space-y-3">
                               <Button
-                                onClick={() => window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')}
-                                variant="outline"
-                                className="w-full text-green-400 border-green-400 hover:bg-green-400 hover:text-black"
+                                onClick={downloadAPK}
+                                disabled={downloadStatus === 'downloading'}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white transition-all"
                               >
-                                <Github className="w-4 h-4 mr-2" />
-                                View Build Details
+                                {downloadStatus === 'downloading' ? (
+                                  <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                    Downloading...
+                                  </>
+                                ) : downloadStatus === 'success' ? (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                                    Downloaded!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download APK
+                                  </>
+                                )}
                               </Button>
-                            )}
-                            
-                            <Button
-                              onClick={resetForm}
-                              variant="ghost"
-                              className="w-full text-gray-400 hover:text-white"
-                            >
-                              <RefreshCw className="w-4 h-4 mr-2" />
-                              Build Another APK
-                            </Button>
+
+                              {/* Alternative Download Options */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                  onClick={() => window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')}
+                                  variant="outline"
+                                  className="text-green-400 border-green-400 hover:bg-green-400 hover:text-black text-xs"
+                                >
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  GitHub
+                                </Button>
+                                
+                                <Button
+                                  onClick={resetForm}
+                                  variant="outline"
+                                  className="text-gray-400 border-gray-400 hover:bg-gray-400 hover:text-black text-xs"
+                                >
+                                  <RefreshCw className="w-3 h-3 mr-1" />
+                                  New Build
+                                </Button>
+                              </div>
+
+                              {/* Download Instructions */}
+                              <div className="bg-slate-800 rounded-lg p-3 text-xs text-gray-300">
+                                <p className="font-medium mb-1">Download Instructions:</p>
+                                <ol className="list-decimal list-inside space-y-1">
+                                  <li>Click Download APK above</li>
+                                  <li>Extract the ZIP file on your device</li>
+                                  <li>Install the APK on your Android phone</li>
+                                  <li>Enable "Install from unknown sources" if needed</li>
+                                </ol>
+                              </div>
+                            </div>
                           </div>
                         )}
 
@@ -945,7 +1011,6 @@ export default function APKBuilder() {
     </div>
   )
 }
-
 
 
 
