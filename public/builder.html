@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK.yml - Terminal View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            line-height: 1.4;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .terminal {
+            background: #000000;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            position: relative;
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #00ff00;
+            margin-bottom: 15px;
+        }
+
+        .terminal-title {
+            font-weight: bold;
+            color: #00ff00;
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .close { background: #ff5f56; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #27c93f; }
+
+        .prompt {
+            color: #00ff00;
+            margin-right: 8px;
+        }
+
+        .command {
+            color: #ffffff;
+        }
+
+        .comment {
+            color: #6a9955;
+            font-style: italic;
+        }
+
+        .keyword {
+            color: #569cd6;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .line-number {
+            color: #6a9955;
+            display: inline-block;
+            width: 40px;
+            text-align: right;
+            margin-right: 15px;
+            user-select: none;
+        }
+
+        .code-block {
+            margin: 10px 0;
+            padding-left: 55px;
+        }
+
+        .indent-1 { margin-left: 20px; }
+        .indent-2 { margin-left: 40px; }
+        .indent-3 { margin-left: 60px; }
+        .indent-4 { margin-left: 80px; }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .file-name {
+            text-align: center;
+            color: #00ff00;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .status-bar {
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #00ff00;
+            color: #6a9955;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="file-name">APK.yml</div>
+    
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-title">apk-builder-actions/.github/workflows/apk.yml</div>
+            <div class="terminal-controls">
+                <div class="control close"></div>
+                <div class="control minimize"></div>
+                <div class="control maximize"></div>
+            </div>
+        </div>
+
+        <div class="code-content">
+            <div class="code-line">
+                <span class="line-number">1</span>
+                <span class="comment"># GitHub Actions workflow for building Android APKs</span>
+            </div>
+            <div class="code-line">
+                <span class="line-number">2</span>
+                <span class="comment"># Triggered by repository_dispatch events</span>
+            </div>
+            <div class="code-line">
+                <span class="line-number">3</span>
+                <span class="keyword">name</span><span class="prompt">:</span> APK Builder Workflow
+            </div>
+            <div class="code-line"><br></div>
+            
+            <div class="code-line">
+                <span class="line-number">4</span>
+                <span class="keyword">on</span><span class="prompt">:</span>
+            </div>
+            <div class="code-line indent-1">
+                <span class="line-number">5</span>
+                <span class="keyword">repository_dispatch</span><span class="prompt">:</span>
+            </div>
+            <div class="code-line indent-2">
+                <span class="line-number">6</span>
+                <span class="keyword">types</span><span class="prompt">: </span><span class="string">[apk_build]</span>
+            </div>
+            <div class="code-line"><br></div>
+            
+            <div class="code-line">
+                <span class="line-number">7</span>
+                <span class="keyword">jobs</span><span class="prompt">:</span>
+            </div>
+            <div class="code-line indent-1">
+                <span class="line-number">8</span>
+                <span class="keyword">build-apk</span><span class="prompt">:</span>
+            </div>
+            <div class="code-line indent-2">
+                <span class="line-number">9</span>
+                <span class="keyword">runs-on</span><span class="prompt">: </span><span class="string">ubuntu-latest</span>
+            </div>
+            <div class="code-line"><br></div>
+            
+            <div class="code-line indent-2">
+                <span class="line-number">10</span>
+                <span class="keyword">steps</span><span class="prompt">:</span>
+            </div>
+            
+            <div class="code-block">
+                <div class="code-line">
+                    <span class="line-number">11</span>
+                    <span class="comment"># Checkout repository</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">12</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Checkout</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">13</span>
+                    <span class="keyword">uses</span><span class="prompt">: </span><span class="string">actions/checkout@v4</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">14</span>
+                    <span class="comment"># Setup Python environment</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">15</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Setup Python</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">16</span>
+                    <span class="keyword">uses</span><span class="prompt">: </span><span class="string">actions/setup-python@v4</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">17</span>
+                    <span class="keyword">with</span><span class="prompt">:</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">18</span>
+                    <span class="keyword">python-version</span><span class="prompt">: </span><span class="string">'3.11'</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">19</span>
+                    <span class="comment"># Setup Java Development Kit</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">20</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Setup JDK</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">21</span>
+                    <span class="keyword">uses</span><span class="prompt">: </span><span class="string">actions/setup-java@v4</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">22</span>
+                    <span class="keyword">with</span><span class="prompt">:</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">23</span>
+                    <span class="keyword">java-version</span><span class="prompt">: </span><span class="string">'17'</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">24</span>
+                    <span class="keyword">distribution</span><span class="prompt">: </span><span class="string">'temurin'</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">25</span>
+                    <span class="comment"># Setup Android SDK</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">26</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Setup Android SDK</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">27</span>
+                    <span class="keyword">uses</span><span class="prompt">: </span><span class="string">android-actions/setup-android@v3</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">28</span>
+                    <span class="comment"># Cache Gradle packages for faster builds</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">29</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Cache Gradle packages</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">30</span>
+                    <span class="keyword">uses</span><span class="prompt">: </span><span class="string">actions/cache@v3</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">31</span>
+                    <span class="keyword">with</span><span class="prompt">:</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">32</span>
+                    <span class="keyword">path</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">33</span>
+                    <span class="string">~/.gradle/caches</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">34</span>
+                    <span class="string">~/.gradle/wrapper</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">35</span>
+                    <span class="keyword">key</span><span class="prompt">: </span><span class="string">gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">36</span>
+                    <span class="keyword">restore-keys</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">37</span>
+                    <span class="string">gradle-${{ runner.os }}-</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">38</span>
+                    <span class="comment"># Clone Android template project</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">39</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Clone Android template</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">40</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">41</span>
+                    <span class="string">git clone https://github.com/sudo-self/template_apk.git android-project</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">42</span>
+                    <span class="string">echo "Template cloned"</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">43</span>
+                    <span class="comment"># Verify required environment variables</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">44</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Verify environment variables</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">45</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">46</span>
+                    <span class="string">echo "Checking required environment variables..."</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">47</span>
+                    <span class="string">if [ -z "${{ github.event.client_payload.hostName }}" ]; then</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">48</span>
+                    <span class="string">echo "ERROR: hostName is required in client_payload"</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">49</span>
+                    <span class="string">exit 1</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">50</span>
+                    <span class="string">fi</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">51</span>
+                    <span class="string">if [ -z "${{ github.event.client_payload.name }}" ]; then</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">52</span>
+                    <span class="string">echo "ERROR: name is required in client_payload"</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">53</span>
+                    <span class="string">exit 1</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">54</span>
+                    <span class="string">fi</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">55</span>
+                    <span class="string">echo "Required variables present"</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">56</span>
+                    <span class="comment"># Install Python dependencies</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">57</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Install Python dependencies</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">58</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">59</span>
+                    <span class="string">python3 -m pip install --upgrade pip</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">60</span>
+                    <span class="string"># requirements.txt </span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">61</span>
+                    <span class="string">if [ -f "requirements.txt" ]; then</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">62</span>
+                    <span class="string">python3 -m pip install -r requirements.txt</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">63</span>
+                    <span class="string">else</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">64</span>
+                    <span class="string">python3 -m pip install Pillow</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">65</span>
+                    <span class="string">fi</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">66</span>
+                    <span class="comment"># Customize Android project with user parameters</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">67</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Customize Android project</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">68</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">python3 scripts/customize-project.py</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">69</span>
+                    <span class="keyword">env</span><span class="prompt">:</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">70</span>
+                    <span class="keyword">BUILD_ID</span><span class="prompt">: </span><span class="string">${{ github.run_id }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">71</span>
+                    <span class="keyword">HOST_NAME</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.hostName }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">72</span>
+                    <span class="keyword">LAUNCH_URL</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.launchUrl }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">73</span>
+                    <span class="keyword">APP_NAME</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.name }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">74</span>
+                    <span class="keyword">LAUNCHER_NAME</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.launcherName }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">75</span>
+                    <span class="keyword">THEME_COLOR</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.themeColor }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">76</span>
+                    <span class="keyword">THEME_COLOR_DARK</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.themeColorDark }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">77</span>
+                    <span class="keyword">BACKGROUND_COLOR</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.backgroundColor }}</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">78</span>
+                    <span class="keyword">ICON_CHOICE</span><span class="prompt">: </span><span class="string">${{ github.event.client_payload.iconChoice || 'phone' }}</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">79</span>
+                    <span class="comment"># Make Gradle wrapper executable</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">80</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Make Gradlew Executable</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">81</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">chmod +x android-project/gradlew</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">82</span>
+                    <span class="comment"># Build Release APK</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">83</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Build Release APK</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">84</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">85</span>
+                    <span class="string">cd android-project</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">86</span>
+                    <span class="string">./gradlew assembleRelease --stacktrace --no-daemon</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">87</span>
+                    <span class="comment"># Find and rename APK file</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">88</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Find and rename APK</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">89</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">90</span>
+                    <span class="string">APK_FILE=$(find android-project/app/build/outputs/apk/release -name "*.apk" -type f | head -n 1)</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">91</span>
+                    <span class="string">if [ -z "$APK_FILE" ]; then</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">92</span>
+                    <span class="string">echo "No APK file found in release folder, searching entire project..."</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">93</span>
+                    <span class="string">find android-project -name "*.apk" -type f</span>
+                </div>
+                <div class="code-line indent-4">
+                    <span class="line-number">94</span>
+                    <span class="string">exit 1</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">95</span>
+                    <span class="string">fi</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">96</span>
+                    <span class="string">CLEAN_NAME=$(echo "${{ github.event.client_payload.name }}" | tr -c '[:alnum:]._-' '_')</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">97</span>
+                    <span class="string">OUTPUT_NAME="${CLEAN_NAME}_v1.0.${{ github.run_number }}.apk"</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">98</span>
+                    <span class="string">cp "$APK_FILE" "./$OUTPUT_NAME"</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">99</span>
+                    <span class="string">APK_SIZE=$(ls -lh "$OUTPUT_NAME" | awk '{print $5}')</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">100</span>
+                    <span class="string">echo "APK created: $OUTPUT_NAME ($APK_SIZE)"</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">101</span>
+                    <span class="string">echo "apk_name=$OUTPUT_NAME" >> $GITHUB_ENV</span>
+                </div>
+                <div class="code-line"><br></div>
+                
+                <div class="code-line">
+                    <span class="line-number">102</span>
+                    <span class="comment"># Verify APK signature</span>
+                </div>
+                <div class="code-line indent-1">
+                    <span class="line-number">103</span>
+                    <span class="keyword">- name</span><span class="prompt">: </span><span class="string">Verify APK signature</span>
+                </div>
+                <div class="code-line indent-2">
+                    <span class="line-number">104</span>
+                    <span class="keyword">run</span><span class="prompt">: </span><span class="string">|</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">105</span>
+                    <span class="string">BUILD_TOOLS_DIR=$(find $ANDROID_HOME/build-tools -maxdepth 1 -type d | sort -V | tail -n1)</span>
+                </div>
+                <div class="code-line indent-3">
+                    <span class="line-number">106</span>
+                    <span class="string">APK_SIGNER="$BUILD_TOOLS_DIR/apksigner"</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span class="prompt">$</span> <span class="command">Ready</span><span class="blink">_</span>
+        </div>
+    </div>
+</body>
+</html>
