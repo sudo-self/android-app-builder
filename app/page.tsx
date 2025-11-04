@@ -20,7 +20,8 @@ interface BuildData {
   themeColorDark: string
   backgroundColor: string
   iconChoice: string
-  iconUrl: string 
+  iconUrl: string
+}
 
 interface BuildStatus {
   status: 'pending' | 'success' | 'failed' | 'unknown'
