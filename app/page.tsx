@@ -754,7 +754,10 @@ export default function APKBuilder() {
                           {hostName || "yourapp.com"}
                         </p>
                         <p className={`text-xs mt-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                         Create native Android applications
+                         build native Android applications with GitHub
+                        </p>
+                         <p className={`text-xs mt-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
+                        Kotlin MainActivity.kt imports webkit.WebView 
                         </p>
                       </div>
 
