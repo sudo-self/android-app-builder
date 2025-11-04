@@ -564,7 +564,7 @@ export default function APKBuilder() {
                   <img 
                     src="./droiddroid.svg" 
                     alt="Android Logo"
-                    className="w-28 h-28 mb-8"
+                    className="w-32 h-32 mb-8"
                   />
                 </div>
                 <div className="flex gap-2 mb-4">
@@ -573,7 +573,7 @@ export default function APKBuilder() {
                   <div className="w-3 h-3 bg-[#3DDC84] rounded-full animate-bounce" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[#3DDC84] text-md font-medium animate-pulse">a n d r o i d</p>
+                  <p className="text-[#3DDC84] text-lg font-medium animate-pulse">a n d r o i d</p>
                 </div>
               </div>
             ) : (
@@ -755,7 +755,7 @@ export default function APKBuilder() {
                           {hostName || "yourapp.com"}
                         </p>
                         <p className={`text-xs mt-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          Transform URLs and content into native Android applications
+                          Transform websites into native Android applications
                         </p>
                       </div>
 
