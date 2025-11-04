@@ -20,8 +20,7 @@ interface BuildData {
   themeColorDark: string
   backgroundColor: string
   iconChoice: string
-  iconUrl: string // Added iconUrl to pass to GitHub action
-}
+  iconUrl: string 
 
 interface BuildStatus {
   status: 'pending' | 'success' | 'failed' | 'unknown'
@@ -972,12 +971,12 @@ export default function APKBuilder() {
                         className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
                       >
                         <a
-                          href="https://JesseJesse.com"
+                          href="https://www.npmjs.com/package/apk-builder-cli"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="underline hover:text-pink-500"
+                          className="underline hover:text-red-500"
                         >
-                          JesseJesse.com
+                          npm i apk-builder-cli
                         </a>
                       </p>
 
@@ -1007,8 +1006,8 @@ export default function APKBuilder() {
                     className="hover:opacity-80 transition-opacity"
                   >
                     <img
-                      src="https://img.shields.io/badge/Actions-yml-blue?style=plastic&logo=github"
-                      alt="APK Builder"
+                      src="https://img.shields.io/badge/npm-apk--builder--cli-red?style=plastic&logo=npm"
+                      alt="npm - apk--builder--cli"
                       className="h-4"
                     />
                   </a>
@@ -1021,6 +1020,4 @@ export default function APKBuilder() {
     </div>
   )
 }
-
-
 
