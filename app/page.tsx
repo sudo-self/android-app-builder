@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2 } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2, Upload } from "lucide-react"
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
@@ -21,6 +21,7 @@ interface BuildData {
   backgroundColor: string
   iconChoice: string
   iconUrl: string
+  publishRelease: boolean
 }
 
 interface BuildStatus {
@@ -56,6 +57,7 @@ export default function APKBuilder() {
   const [themeColorDark, setThemeColorDark] = useState("#1e40af")
   const [backgroundColor, setBackgroundColor] = useState("#ffffff")
   const [iconChoice, setIconChoice] = useState("phone")
+  const [publishRelease, setPublishRelease] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [isBuilding, setIsBuilding] = useState(false)
   const [terminalLogs, setTerminalLogs] = useState<string[]>([])
@@ -360,7 +362,8 @@ export default function APKBuilder() {
           themeColorDark: themeColorDark,
           backgroundColor: backgroundColor,
           iconChoice: iconChoice,
-          iconUrl: selectedIcon.url 
+          iconUrl: selectedIcon.url,
+          publishRelease: publishRelease
         }
         
         setTerminalLogs([
@@ -369,6 +372,7 @@ export default function APKBuilder() {
           `${cleanHostName}`,
           `${themeColor}`,
           `${iconChoice}`,
+          `Publish Release: ${publishRelease ? 'Yes' : 'No'}`,
           `ID: ${buildId}`,
           "downloading custom icon...",
           "configuring app theme...",
@@ -511,6 +515,7 @@ export default function APKBuilder() {
     setThemeColorDark("#1e40af")
     setBackgroundColor("#ffffff")
     setIconChoice("phone")
+    setPublishRelease(false)
     setTerminalLogs([])
     setBuildId(null)
     setGithubRunId(null)
@@ -819,6 +824,29 @@ export default function APKBuilder() {
                           apk build time approx 1-3 mins
                         </p>
                       </div>
+
+                      {/* Publish Release Option */}
+                      <div className="flex items-center space-x-2 p-3 rounded-lg border" style={{
+                        borderColor: isDarkMode ? '#334155' : '#e2e8f0',
+                        backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc'
+                      }}>
+                        <input
+                          type="checkbox"
+                          id="publishRelease"
+                          checked={publishRelease}
+                          onChange={(e) => setPublishRelease(e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <Label htmlFor="publishRelease" className={`font-medium flex items-center gap-2 ${
+                          isDarkMode ? "text-white" : "text-slate-900"
+                        }`}>
+                          <Upload className="w-4 h-4" />
+                          Publish Release
+                        </Label>
+                      </div>
+                      <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        When enabled, the APK will be published as a GitHub release
+                      </p>
 
                       <Button
                         type="button"
