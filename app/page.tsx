@@ -830,7 +830,7 @@ export default function APKBuilder() {
                                 </ol>
                                 {githubRunId && artifactId && (
                                   <p className="mt-2 text-green-400">
-                                  build: {githubRunId} {artifactId}
+                                  #{githubRunId} #{artifactId}
                                   </p>
                                 )}
                               </div>
@@ -883,10 +883,10 @@ export default function APKBuilder() {
                           {hostName || "yourapp.com"}
                         </p>
                         <p className={`text-xs mt-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                         build native Android apps with Kotlin
+                         build native Android apps
                         </p>
-                         <p className={`text-xs mt-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}>
-                          webkit.WebView 
+                         <p className={`text-xs mt-2 ${isDarkMode ? "text-green-400" : "text-pink-600"}`}>
+                          webkit.WebView
                         </p>
                       </div>
 
@@ -1130,7 +1130,7 @@ export default function APKBuilder() {
                           rel="noopener noreferrer"
                           className="hover:underline hover:text-red-500"
                         >
-                          RESET BUILDER
+                          R E L O A D
                         </a>
                       </p>
 
