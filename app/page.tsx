@@ -822,17 +822,15 @@ export default function APKBuilder() {
                               </div>
 
                               <div className="bg-slate-800 rounded-lg p-3 text-xs text-gray-300">
-                                <p className="font-medium mb-1">Download Instructions:</p>
+                                <p className="font-medium mb-1">Download Instructions</p>
                                 <ol className="list-decimal list-inside space-y-1">
-                                  <li>Click "Download APK" above</li>
-                                  <li>You'll be redirected to GitHub</li>
-                                  <li>Click the download button on the GitHub page</li>
-                                  <li>Install the APK on your Android phone</li>
-                                  <li>Enable "Install from unknown sources" if needed</li>
+                                  <li>Click "Download APK"</li>
+                                  <li>Enable "install from unknown sources"</li>
+                                  <li>install the APK</li>
                                 </ol>
                                 {githubRunId && artifactId && (
                                   <p className="mt-2 text-green-400">
-                                    Run ID: {githubRunId} • Artifact: {artifactId}
+                                  build: {githubRunId} {artifactId}
                                   </p>
                                 )}
                               </div>
