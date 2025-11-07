@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2, Upload } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2, Upload, Play } from "lucide-react"
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
@@ -88,7 +88,8 @@ export default function APKBuilder() {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [downloadStatus, setDownloadStatus] = useState<'idle' | 'downloading' | 'success' | 'error'>('idle')
-
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState("")
 
   const selectedIcon = ICON_CHOICES.find(icon => icon.value === iconChoice) || ICON_CHOICES[0]
 
@@ -291,6 +292,22 @@ export default function APKBuilder() {
     }
   }
 
+  const testWebsite = () => {
+    if (!url) {
+      setError("Please enter a URL to test")
+      return
+    }
+
+    try {
+      new URL(url)
+      setPreviewUrl(url)
+      setShowPreview(true)
+      setError(null)
+    } catch (e) {
+      setError("Please enter a valid URL with http:// or https://")
+    }
+  }
+
   const triggerGitHubAction = async (buildData: BuildData): Promise<string | null> => {
     const token = getGitHubToken()
     if (!token) {
@@ -447,6 +464,7 @@ export default function APKBuilder() {
       setBuildStartTime(Date.now())
       setShowAppKey(false)
       setDownloadStatus('idle')
+      setShowPreview(false)
 
       try {
         const buildId = `build_${Date.now()}`
@@ -653,6 +671,8 @@ export default function APKBuilder() {
     setShowAdvanced(false)
     setError(null)
     setDownloadStatus('idle')
+    setShowPreview(false)
+    setPreviewUrl("")
   }
 
   return (
@@ -739,7 +759,27 @@ export default function APKBuilder() {
                 </div>
 
                 <div className="h-[calc(100%-3rem-24px)] overflow-y-auto p-6">
-                  {isBuilding || isComplete ? (
+                  {showPreview ? (
+                    <div className="h-full bg-white rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-between p-3 bg-slate-100 border-b">
+                        <button 
+                          onClick={() => setShowPreview(false)}
+                          className="text-slate-600 hover:text-slate-800 text-sm font-medium"
+                        >
+                          ← Back
+                        </button>
+                        <span className="text-slate-600 text-sm truncate max-w-[200px]">
+                          {previewUrl}
+                        </span>
+                      </div>
+                      <iframe
+                        src={previewUrl}
+                        className="w-full h-full border-0"
+                        title="Website Preview"
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                      />
+                    </div>
+                  ) : isBuilding || isComplete ? (
                     <div className="h-full bg-black rounded-xl p-4 overflow-y-auto font-mono">
                       <div className="flex items-center gap-2 mb-4 text-green-400 text-sm">
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -909,6 +949,17 @@ export default function APKBuilder() {
                           required
                         />
                       </div>
+
+                      <Button
+                        type="button"
+                        onClick={testWebsite}
+                        disabled={!url}
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
+                      >
+                        <Play className="w-4 h-4" />
+                        Test Website
+                      </Button>
 
                       <div className="flex items-center space-x-2 p-3 rounded-lg border" style={{
                         borderColor: isDarkMode ? '#334155' : '#e2e8f0',
@@ -1081,19 +1132,6 @@ export default function APKBuilder() {
                           </div>
                         </div>
                       )}
-
-                      <p
-                        className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
-                      >
-                        <a
-                          href="https://apk.jessejesse.com"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline hover:text-red-500"
-                        >
-                          R E L O A D
-                        </a>
-                      </p>
 
                       <Button
                         type="submit"
