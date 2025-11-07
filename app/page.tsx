@@ -31,6 +31,19 @@ interface BuildStatus {
   artifactName?: string
 }
 
+interface GitHubArtifact {
+  id: number
+  name: string
+  archive_download_url: string
+  expired: boolean
+}
+
+interface GitHubRun {
+  id: number
+  status: 'queued' | 'in_progress' | 'completed'
+  conclusion: 'success' | 'failure' | 'cancelled' | 'skipped' | null
+}
+
 const ICON_CHOICES = [
   {
     value: "phone",
@@ -134,11 +147,14 @@ export default function APKBuilder() {
 
     let pollCount = 0
     const maxPolls = 120
+    let isCancelled = false
 
     const pollBuildStatus = async () => {
-      if (pollCount >= maxPolls) {
-        setTerminalLogs(prev => [...prev, "Build timeout - check GitHub Actions for status"])
-        setIsBuilding(false)
+      if (isCancelled || pollCount >= maxPolls) {
+        if (pollCount >= maxPolls) {
+          setTerminalLogs(prev => [...prev, "⏰ Build timeout - check GitHub Actions for status"])
+          setIsBuilding(false)
+        }
         return
       }
 
@@ -148,7 +164,7 @@ export default function APKBuilder() {
         const result = await checkBuildStatus(githubRunId)
         
         if (result.status === 'success') {
-          setTerminalLogs(prev => [...prev, "✓ Build completed", "✓ APK is ready"])
+          setTerminalLogs(prev => [...prev, "✅ Build completed", "📦 APK is ready"])
           setIsBuilding(false)
           setIsComplete(true)
           
@@ -162,25 +178,27 @@ export default function APKBuilder() {
             setArtifactName(result.artifactName)
           }
         } else if (result.status === 'failed') {
-          setTerminalLogs(prev => [...prev, "✗ Build failed. Check GitHub Actions for details"])
+          setTerminalLogs(prev => [...prev, "❌ Build failed. Check GitHub Actions for details"])
           setIsBuilding(false)
         } else {
           const elapsedMinutes = Math.floor((Date.now() - buildStartTime) / 60000)
           if (pollCount % 6 === 0) {
-            setTerminalLogs(prev => [...prev, `building... (${elapsedMinutes}m elapsed)`])
+            setTerminalLogs(prev => [...prev, `🔄 Building... (${elapsedMinutes}m elapsed)`])
           }
-          setTimeout(pollBuildStatus, 5000)
+          setTimeout(pollBuildStatus, 10000) // Increased to 10 seconds
         }
       } catch (error) {
         console.error('Error polling GitHub status:', error)
-        setTimeout(pollBuildStatus, 5000)
+        if (!isCancelled) {
+          setTimeout(pollBuildStatus, 10000)
+        }
       }
     }
 
     pollBuildStatus()
 
     return () => {
-      pollCount = maxPolls
+      isCancelled = true
     }
   }, [isBuilding, githubRunId, buildStartTime])
 
@@ -195,26 +213,38 @@ export default function APKBuilder() {
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}`,
         {
           headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
           }
         }
       )
       
       if (!runResponse.ok) {
-        throw new Error(`GitHub API error: ${runResponse.status}`)
+        if (runResponse.status === 404) {
+          throw new Error(`Workflow run ${runId} not found`)
+        } else if (runResponse.status === 403) {
+          throw new Error('GitHub token invalid or missing permissions')
+        } else if (runResponse.status === 401) {
+          throw new Error('GitHub token is invalid')
+        }
+        throw new Error(`GitHub API error: ${runResponse.status} ${runResponse.statusText}`)
       }
       
-      const runData = await runResponse.json()
+      const runData: GitHubRun = await runResponse.json()
       
       if (runData.status === 'completed') {
         if (runData.conclusion === 'success') {
+          // Wait a bit for artifacts to be available
+          await new Promise(resolve => setTimeout(resolve, 5000))
+          
           const artifactsResponse = await fetch(
             `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${runId}/artifacts`,
             {
               headers: {
-                'Authorization': `token ${token}`,
-                'Accept': 'application/vnd.github.v3+json'
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'X-GitHub-Api-Version': '2022-11-28'
               }
             }
           )
@@ -222,18 +252,26 @@ export default function APKBuilder() {
           if (artifactsResponse.ok) {
             const artifactsData = await artifactsResponse.json()
             if (artifactsData.artifacts && artifactsData.artifacts.length > 0) {
-              const artifact = artifactsData.artifacts[0]
-              const artifactDownloadUrl = artifact.archive_download_url
-              return { 
-                status: 'success', 
-                artifactUrl: artifactDownloadUrl,
-                artifactId: artifact.id.toString(),
-                artifactName: artifact.name
+              const artifact: GitHubArtifact = artifactsData.artifacts[0]
+              if (!artifact.expired) {
+                return { 
+                  status: 'success', 
+                  artifactUrl: artifact.archive_download_url,
+                  artifactId: artifact.id.toString(),
+                  artifactName: artifact.name
+                }
+              } else {
+                throw new Error('Artifact has expired')
               }
+            } else {
+              return { status: 'success' } // Build succeeded but no artifacts
             }
+          } else if (artifactsResponse.status === 404) {
+            // No artifacts found, but build succeeded
+            return { status: 'success' }
+          } else {
+            throw new Error(`Failed to fetch artifacts: ${artifactsResponse.status}`)
           }
-          
-          return { status: 'success' }
         } else {
           return { status: 'failed' }
         }
@@ -262,14 +300,38 @@ export default function APKBuilder() {
     }
 
     try {
+      // First verify the token has the necessary permissions
+      const repoResponse = await fetch(
+        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+          }
+        }
+      )
+
+      if (!repoResponse.ok) {
+        if (repoResponse.status === 404) {
+          throw new Error(`Repository ${GITHUB_OWNER}/${GITHUB_REPO} not found or access denied`)
+        } else if (repoResponse.status === 403) {
+          throw new Error('GitHub token invalid or missing repository permissions')
+        } else if (repoResponse.status === 401) {
+          throw new Error('GitHub token is invalid or expired')
+        }
+        throw new Error(`GitHub API error: ${repoResponse.status} - ${repoResponse.statusText}`)
+      }
+
       const response = await fetch(
         `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`,
         {
           method: 'POST',
           headers: {
-            'Authorization': `token ${token}`,
+            'Authorization': `Bearer ${token}`,
             'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-GitHub-Api-Version': '2022-11-28'
           },
           body: JSON.stringify({
             event_type: 'apk_build',
@@ -280,36 +342,52 @@ export default function APKBuilder() {
 
       if (!response.ok) {
         const errorText = await response.text()
+        console.error('GitHub dispatch error:', errorText)
+        
         if (response.status === 404) {
-          throw new Error('GitHub repository not found or access denied')
+          throw new Error('GitHub repository not found or access denied. Check repository name and permissions.')
         } else if (response.status === 403) {
-          throw new Error('GitHub token invalid or missing permissions')
+          throw new Error('GitHub token missing "workflow" scope permission. Please add workflow scope to your token.')
+        } else if (response.status === 401) {
+          throw new Error('GitHub token is invalid or expired. Please check your token.')
+        } else if (response.status === 422) {
+          throw new Error('Workflow dispatch failed. Check if the workflow file exists in the repository.')
         } else {
           throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`)
         }
       }
 
-      await new Promise(resolve => setTimeout(resolve, 5000))
+      // Wait for the workflow to start
+      await new Promise(resolve => setTimeout(resolve, 8000))
 
-      const runsResponse = await fetch(
-        `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=10`,
-        {
-          headers: {
-            'Authorization': `token ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
+      // Poll for the workflow run
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const runsResponse = await fetch(
+          `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs?event=repository_dispatch&per_page=5`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          }
+        )
+
+        if (runsResponse.ok) {
+          const runsData = await runsResponse.json()
+          if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
+            const recentRun = runsData.workflow_runs[0]
+            // Verify this is our run by checking the build ID in the event payload
+            if (recentRun.event === 'repository_dispatch') {
+              return recentRun.id.toString()
+            }
           }
         }
-      )
 
-      if (runsResponse.ok) {
-        const runsData = await runsResponse.json()
-        if (runsData.workflow_runs && runsData.workflow_runs.length > 0) {
-          const recentRun = runsData.workflow_runs[0]
-          return recentRun.id.toString()
-        }
+        await new Promise(resolve => setTimeout(resolve, 3000))
       }
 
-      return null
+      throw new Error('Failed to get GitHub Actions run ID. The build may have started - check GitHub Actions manually.')
 
     } catch (error) {
       console.error('Error triggering GitHub action:', error)
@@ -367,15 +445,15 @@ export default function APKBuilder() {
         }
         
         setTerminalLogs([
-          "building apk...",
-          `${appName}`,
-          `${cleanHostName}`,
-          `${themeColor}`,
-          `${iconChoice}`,
-          `Publish Release: ${publishRelease ? 'Yes' : 'No'}`,
-          `ID: ${buildId}`,
-          "downloading custom icon...",
-          "configuring app theme...",
+          "🚀 Starting APK build...",
+          `📱 App: ${appName}`,
+          `🌐 Domain: ${cleanHostName}`,
+          `🎨 Theme: ${themeColor}`,
+          `🖼️ Icon: ${iconChoice}`,
+          `📦 Publish Release: ${publishRelease ? 'Yes' : 'No'}`,
+          `🆔 Build ID: ${buildId}`,
+          "⬇️ Downloading custom icon...",
+          "⚙️ Configuring app theme...",
           ""
         ])
 
@@ -385,11 +463,12 @@ export default function APKBuilder() {
           setGithubRunId(runId)
           setTerminalLogs(prev => [
             ...prev,
-            `Linux Gradle...`,
-            `Run ID: ${runId}`,
-            "build in progress",
-            "replacing default icons...",
-            "creating artifact",
+            `✅ GitHub Action triggered successfully`,
+            `📋 Run ID: ${runId}`,
+            "🔄 Build in progress...",
+            "🔄 Replacing default icons...",
+            "🔄 Creating artifact...",
+            "⏳ This may take 2-5 minutes...",
             ""
           ])
         } else {
@@ -399,7 +478,7 @@ export default function APKBuilder() {
       } catch (error: any) {
         console.error('Build error:', error)
         const errorMessage = error.message || 'Unknown error occurred'
-        setTerminalLogs(prev => [...prev, `Build failed: ${errorMessage}`])
+        setTerminalLogs(prev => [...prev, `❌ Build failed: ${errorMessage}`])
         setError(errorMessage)
         setIsBuilding(false)
       }
@@ -431,7 +510,7 @@ export default function APKBuilder() {
         try {
           const response = await fetch(downloadUrl, {
             headers: {
-              'Authorization': `token ${token}`,
+              'Authorization': `Bearer ${token}`,
               'Accept': 'application/vnd.github.v3+json'
             }
           })
@@ -439,7 +518,7 @@ export default function APKBuilder() {
           if (response.ok) {
             const blob = await response.blob()
             
-            // FIXED: Create proper APK filename with extension
+            // Create proper APK filename with extension
             const safeAppName = appName.replace(/[^a-z0-9]/gi, '_').toLowerCase()
             const filename = `${safeAppName}_${buildId || 'app'}.apk`
             
@@ -447,7 +526,7 @@ export default function APKBuilder() {
             const blobUrl = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = blobUrl
-            a.download = filename // This ensures .apk extension
+            a.download = filename
             a.style.display = 'none'
             
             document.body.appendChild(a)
@@ -462,7 +541,7 @@ export default function APKBuilder() {
           }
         } catch (fetchError) {
           console.error('Direct download failed, falling back to GitHub:', fetchError)
-     
+          // Fallback to GitHub Actions page
           if (githubRunId) {
             window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
           }
@@ -470,7 +549,7 @@ export default function APKBuilder() {
         }
         
       } else if (githubRunId) {
-    
+        // No artifact ID, open GitHub Actions page
         window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
         setDownloadStatus('idle')
       }
@@ -479,7 +558,7 @@ export default function APKBuilder() {
       setError(`Download failed: ${error.message}`)
       setDownloadStatus('error')
       
-
+      // Fallback to GitHub Actions page
       if (githubRunId) {
         window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')
       }
