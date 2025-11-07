@@ -886,7 +886,7 @@ return (
                                   onClick={() => window.open(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/actions/runs/${githubRunId}`, '_blank')}
                                   className="underline hover:no-underline hover:text-blue-400 text-blue-300"
                                 >
-                                  View live build on GitHub →
+                                  View live build status →
                                 </button>
                               </div>
                             )}
@@ -1165,7 +1165,7 @@ return (
                     <img
                       src="https://img.shields.io/badge/-android--app--builder-informational?style=plastic&logo=github&logoColor=white"
                       alt="npm"
-                      className="h-5"
+                      className="h-4"
                     />
                   </a>
                 </div>
