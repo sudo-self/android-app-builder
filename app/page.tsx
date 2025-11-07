@@ -476,15 +476,15 @@ export default function APKBuilder() {
         }
         
         setTerminalLogs([
-          "🚀 Starting APK build...",
-          `📱 App: ${appName}`,
-          `🌐 Domain: ${cleanHostName}`,
-          `🎨 Theme: ${themeColor}`,
-          `🖼️ Icon: ${iconChoice}`,
-          `📦 Publish Release: ${publishRelease ? 'Yes' : 'No'}`,
-          `🆔 Build ID: ${buildId}`,
-          "⬇️ Downloading custom icon...",
-          "⚙️ Configuring app theme...",
+          "Starting build...",
+          `📱 ${appName}`,
+          `${cleanHostName}`,
+          ` ${themeColor}`,
+          `${iconChoice}`,
+          `📦 Relelase: ${publishRelease ? 'Yes' : 'No'}`,
+          `Build ID: ${buildId}`,
+          "Downloading custom icon...",
+          "Configuring app theme...",
           ""
         ])
 
@@ -494,12 +494,12 @@ export default function APKBuilder() {
           setGithubRunId(runId)
           setTerminalLogs(prev => [
             ...prev,
-            `✅ GitHub Action triggered successfully`,
-            `📋 Run ID: ${runId}`,
-            "🔄 Build in progress...",
-            "🔄 Replacing default icons...",
-            "🔄 Creating artifact...",
-            "⏳ This may take 2-5 minutes...",
+            `GitHub Actions`,
+            `Run ID: ${runId}`,
+            "Build in progress...",
+            "Replacing default icons",
+            "Creating artifact",
+            "may take 2-5 minutes...",
             ""
           ])
         } else {
