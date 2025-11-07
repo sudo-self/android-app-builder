@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2, Upload, Play } from "lucide-react"
+import { Globe, Moon, Sun, Download, RefreshCw, Github, Copy, Key, Palette, AlertCircle, Image, ExternalLink, CheckCircle2, Upload, Play, X } from "lucide-react"
 
 const GITHUB_OWNER = 'sudo-self'
 const GITHUB_REPO = 'apk-builder-actions'
@@ -758,19 +758,16 @@ export default function APKBuilder() {
                   </div>
                 </div>
 
-                <div className="h-[calc(100%-3rem-24px)] overflow-y-auto p-6">
-                  {showPreview ? (
-                    <div className="h-full bg-white rounded-xl overflow-hidden">
-                      <div className="flex items-center justify-between p-3 bg-slate-100 border-b">
+                <div className="h-[calc(100%-3rem-24px)] overflow-y-auto p-6 relative">
+                  {showPreview && (
+                    <div className="absolute inset-0 z-0 bg-white">
+                      <div className="absolute top-2 left-2 z-10">
                         <button 
                           onClick={() => setShowPreview(false)}
-                          className="text-slate-600 hover:text-slate-800 text-sm font-medium"
+                          className="bg-black/80 text-white p-2 rounded-full hover:bg-black transition-colors"
                         >
-                          ← Back
+                          <X className="w-4 h-4" />
                         </button>
-                        <span className="text-slate-600 text-sm truncate max-w-[200px]">
-                          {previewUrl}
-                        </span>
                       </div>
                       <iframe
                         src={previewUrl}
@@ -779,8 +776,10 @@ export default function APKBuilder() {
                         sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
                       />
                     </div>
-                  ) : isBuilding || isComplete ? (
-                    <div className="h-full bg-black rounded-xl p-4 overflow-y-auto font-mono">
+                  )}
+                  
+                  {!showPreview && (isBuilding || isComplete ? (
+                    <div className="h-full bg-black rounded-xl p-4 overflow-y-auto font-mono relative z-10">
                       <div className="flex items-center gap-2 mb-4 text-green-400 text-sm">
                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -891,7 +890,7 @@ export default function APKBuilder() {
                       </div>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
                      
                       <div className="text-center mb-6">
                         <div 
@@ -976,11 +975,11 @@ export default function APKBuilder() {
                           isDarkMode ? "text-white" : "text-slate-900"
                         }`}>
                           <Upload className="w-4 h-4" />
-                          Publish Release
+                          Publish GitHub Release
                         </Label>
                       </div>
                       <p className={`text-xs text-center ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
-                        publish APK as a GitHub release
+                       apk.JesseJesse.com
                       </p>
 
                       <Button
@@ -1142,7 +1141,7 @@ export default function APKBuilder() {
                         Build APK
                       </Button>
                     </form>
-                  )}
+                  ))}
                 </div>
 
                 <div
